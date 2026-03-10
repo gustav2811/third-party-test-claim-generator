@@ -3,9 +3,8 @@ import { ApiKeyGate } from './components/ApiKeyGate';
 import { DocumentWorkspace } from './components/DocumentWorkspace';
 import { Settings } from './components/Settings';
 import { Scenario, AppSettings, DEFAULT_SETTINGS } from './types';
-import { getScenarioChat, generateInitialScenario, refineScenario } from './services/geminiService';
+import { getScenarioChat, generateInitialScenario, refineScenario, ProxyChat } from './services/geminiService';
 import { Settings as SettingsIcon, Loader2, CheckCircle2, MessageSquare, Send, X } from 'lucide-react';
-import { Chat } from '@google/genai';
 
 export default function App() {
   const [claimNumber, setClaimNumber] = useState('');
@@ -15,7 +14,7 @@ export default function App() {
   const [isGeneratingScenario, setIsGeneratingScenario] = useState(false);
   const [scenarioApproved, setScenarioApproved] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [chatSession, setChatSession] = useState<Chat | null>(null);
+  const [chatSession, setChatSession] = useState<ProxyChat | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editPrompt, setEditPrompt] = useState('');
   
