@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import { ApiKeyGate } from './components/ApiKeyGate';
 import { DocumentWorkspace } from './components/DocumentWorkspace';
 import { Settings } from './components/Settings';
@@ -237,6 +238,7 @@ export default function App() {
           onClose={() => setShowSettings(false)}
         />
       )}
+      <Analytics />
     </ApiKeyGate>
   );
 }
