@@ -1,44 +1,47 @@
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI, Chat } from '@google/genai';
 import { DocumentRequirement, Scenario, AppSettings } from '../types';
 import { db } from './db';
 
-export async function generateScenario(claimNumber: string, defaults: AppSettings['defaults']): Promise<Scenario> {
+export function getScenarioChat(claimNumber: string, defaults: AppSettings['defaults']): Chat {
   const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
   const ai = new GoogleGenAI({ apiKey });
 
-  const prompt = `
-    You are an expert insurance claims scenario generator for a South African insurance company (Naked Insurance).
-    Generate a realistic third-party motor vehicle accident scenario.
-    
-    Parameters:
-    - First Party Claim Number: ${claimNumber}
-    - First Party Vehicle: White Fiat 500
-    - Third Party ID Number to use: ${defaults.thirdPartyId}
-    
-    Rules:
-    - The third party must NEVER be fully at fault (there is always a liability claim against our driver).
-    - Provide a realistic description of the accident from the first party's perspective.
-    - Provide a realistic version of events from the third party's perspective.
-    - Invent realistic South African names for the third party and witnesses.
-    
-    Return the scenario as a JSON object matching this schema:
-    {
-      "firstPartyDescription": "string",
-      "witnesses": "string (names and contact info, or 'None')",
-      "thirdPartyName": "string",
-      "thirdPartySurname": "string",
-      "thirdPartyVersion": "string"
-    }
-  `;
-
-  const response = await ai.models.generateContent({
+  return ai.chats.create({
     model: 'gemini-3-flash-preview',
-    contents: prompt,
     config: {
+      systemInstruction: `
+        You are an expert insurance claims scenario generator for a South African insurance company (Naked Insurance).
+        Generate and refine realistic third-party motor vehicle accident scenarios.
+        
+        Context:
+        - First Party Vehicle: White Fiat 500
+        - Third Party ID Number to use: ${defaults.thirdPartyId}
+        
+        Rules:
+        - The third party must NEVER be fully at fault (there is always a liability claim against our driver).
+        - Provide a realistic description of the accident from the first party's perspective.
+        - Provide a realistic version of events from the third party's perspective.
+        - Invent realistic South African names for the third party and witnesses.
+        
+        Output Format:
+        Always return the scenario as a JSON object matching this schema:
+        {
+          "firstPartyDescription": "string",
+          "witnesses": "string (names and contact info, or 'None')",
+          "thirdPartyName": "string",
+          "thirdPartySurname": "string",
+          "thirdPartyVersion": "string"
+        }
+      `,
       responseMimeType: 'application/json',
-    }
+    },
   });
+}
 
+export async function generateInitialScenario(chat: Chat, claimNumber: string, defaults: AppSettings['defaults']): Promise<Scenario> {
+  const prompt = `Generate an initial accident scenario for claim number ${claimNumber}.`;
+  const response = await chat.sendMessage({ message: prompt });
+  
   const text = response.text;
   if (!text) throw new Error('Failed to generate scenario');
   
@@ -46,6 +49,19 @@ export async function generateScenario(claimNumber: string, defaults: AppSetting
   return {
     claimNumber,
     thirdPartyId: defaults.thirdPartyId,
+    ...data
+  };
+}
+
+export async function refineScenario(chat: Chat, scenario: Scenario, editPrompt: string): Promise<Scenario> {
+  const response = await chat.sendMessage({ message: editPrompt });
+  
+  const text = response.text;
+  if (!text) throw new Error('Failed to refine scenario');
+  
+  const data = JSON.parse(text);
+  return {
+    ...scenario,
     ...data
   };
 }
