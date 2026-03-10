@@ -128,7 +128,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!configLoaded || !ssoConfig) {
+    if (!configLoaded) {
+      setIsReady(false);
+      return;
+    }
+
+    if (!ssoConfig) {
       setIsReady(true);
       return;
     }
@@ -140,6 +145,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsReady(true);
       return;
     }
+
+    setIsReady(false);
 
     const script = document.createElement('script');
     script.src = 'https://accounts.google.com/gsi/client';

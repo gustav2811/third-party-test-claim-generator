@@ -78,13 +78,13 @@ export function SSOGate({ children }: { children: React.ReactNode }) {
               {error}
             </p>
           )}
-          <div ref={buttonRef} className="flex justify-center mb-6" />
+          <div ref={buttonRef} className="flex justify-center mb-3" />
           <button
             type="button"
             onClick={signIn}
-            className="w-full py-3 mb-4 bg-grey-800 text-white rounded-full font-bold shadow-button-hidden hover:shadow-button hover:-translate-y-1 transition-all duration-300 ease-out"
+            className="text-sm text-grey-500 hover:text-grey-700 underline mb-4"
           >
-            Continue with Google
+            Google button not showing? Try fallback sign-in
           </button>
           <p className="text-sm text-grey-500">
             Only accounts from your organisation&apos;s Google Workspace can access this page.
