@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Analytics } from '@vercel/analytics/react';
 import { ApiKeyGate } from './components/ApiKeyGate';
+import { SSOGate, SSOHeaderSignOut } from './components/SSOGate';
 import { DocumentWorkspace } from './components/DocumentWorkspace';
 import { Settings } from './components/Settings';
 import { Scenario, AppSettings, DEFAULT_SETTINGS } from './types';
@@ -63,18 +64,22 @@ export default function App() {
   };
 
   return (
+    <SSOGate>
     <ApiKeyGate>
       <div className="min-h-screen bg-grey-10 font-sans text-grey-800">
         <header className="px-6 py-8 lg:px-12 lg:py-12 flex justify-between items-center">
           <h1 className="text-3xl lg:text-5xl font-black leading-tighter text-grey-800 tracking-compact">
             Naked <span className="text-green-200">Claims</span>
           </h1>
+          <div className="flex items-center gap-4">
+            <SSOHeaderSignOut />
           <button 
             onClick={() => setShowSettings(true)}
             className="p-3 bg-white rounded-full shadow-button-hidden hover:shadow-button hover:-translate-y-1 transition-all duration-300 ease-out text-grey-800"
           >
             <SettingsIcon className="w-6 h-6" />
           </button>
+          </div>
         </header>
 
         <main className="px-4 lg:px-12 pb-24 space-y-8 lg:space-y-12">
@@ -240,5 +245,6 @@ export default function App() {
       )}
       <Analytics />
     </ApiKeyGate>
+    </SSOGate>
   );
 }
