@@ -1,5 +1,9 @@
 export interface Scenario {
   claimNumber: string;
+  firstPartyName: string;
+  firstPartySurname: string;
+  firstPartyId: string;
+  firstPartyVehicle: string;
   firstPartyDescription: string;
   witnesses: string;
   thirdPartyName: string;
@@ -19,12 +23,20 @@ export interface DocumentRequirement {
 export interface AppSettings {
   defaults: {
     thirdPartyId: string;
+    firstPartyName: string;
+    firstPartySurname: string;
+    firstPartyId: string;
+    firstPartyVehicle: string;
   };
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
   defaults: {
     thirdPartyId: '9001015000087',
+    firstPartyName: 'John',
+    firstPartySurname: 'Doe',
+    firstPartyId: '8501015000081',
+    firstPartyVehicle: 'White Fiat 500',
   }
 };
 

@@ -9,6 +9,8 @@ import { Chat } from '@google/genai';
 
 export default function App() {
   const [claimNumber, setClaimNumber] = useState('');
+  const [initialGuidance, setInitialGuidance] = useState('');
+  const [showGuidance, setShowGuidance] = useState(false);
   const [scenario, setScenario] = useState<Scenario | null>(null);
   const [isGeneratingScenario, setIsGeneratingScenario] = useState(false);
   const [scenarioApproved, setScenarioApproved] = useState(false);
@@ -34,7 +36,7 @@ export default function App() {
     try {
       const chat = getScenarioChat(claimNumber, settings.defaults);
       setChatSession(chat);
-      const generated = await generateInitialScenario(chat, claimNumber, settings.defaults);
+      const generated = await generateInitialScenario(chat, claimNumber, settings.defaults, initialGuidance);
       setScenario(generated);
     } catch (error) {
       console.error(error);
@@ -85,21 +87,48 @@ export default function App() {
               Enter a first party claim number to generate a realistic third-party motor vehicle accident scenario.
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-4 max-w-xl">
-              <input
-                type="text"
-                value={claimNumber}
-                onChange={(e) => setClaimNumber(e.target.value)}
-                placeholder="e.g. CLM-12345"
-                className="flex-1 rounded-full bg-grey-10 border-none px-6 py-4 text-lg text-grey-800 placeholder-grey-400 focus:ring-2 focus:ring-green-200 outline-none"
-              />
-              <button
-                onClick={handleGenerateScenario}
-                disabled={!claimNumber || isGeneratingScenario}
-                className="px-8 py-4 bg-grey-800 text-white rounded-full font-bold shadow-button-hidden hover:shadow-button hover:-translate-y-1 transition-all duration-300 ease-out disabled:opacity-50 disabled:hover:shadow-button-hidden disabled:hover:translate-y-0 flex items-center justify-center"
-              >
-                {isGeneratingScenario && !scenario ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Generate'}
-              </button>
+            <div className="space-y-4 max-w-xl">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <input
+                  type="text"
+                  value={claimNumber}
+                  onChange={(e) => setClaimNumber(e.target.value)}
+                  placeholder="e.g. CLM-12345"
+                  className="flex-1 rounded-full bg-grey-10 border-none px-6 py-4 text-lg text-grey-800 placeholder-grey-400 focus:ring-2 focus:ring-green-200 outline-none"
+                />
+                <button
+                  onClick={handleGenerateScenario}
+                  disabled={!claimNumber || isGeneratingScenario}
+                  className="px-8 py-4 bg-grey-800 text-white rounded-full font-bold shadow-button-hidden hover:shadow-button hover:-translate-y-1 transition-all duration-300 ease-out disabled:opacity-50 disabled:hover:shadow-button-hidden disabled:hover:translate-y-0 flex items-center justify-center"
+                >
+                  {isGeneratingScenario && !scenario ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Generate'}
+                </button>
+              </div>
+
+              {!showGuidance ? (
+                <button
+                  onClick={() => setShowGuidance(true)}
+                  className="text-grey-500 font-bold text-sm hover:text-grey-800 transition-colors flex items-center"
+                >
+                  <MessageSquare className="w-4 h-4 mr-2" />
+                  Customise the scenario
+                </button>
+              ) : (
+                <div className="animate-fade-in space-y-2">
+                  <div className="flex justify-between items-center">
+                    <label className="text-sm font-bold text-grey-600">Guidance (Optional)</label>
+                    <button onClick={() => { setShowGuidance(false); setInitialGuidance(''); }} className="text-grey-400 hover:text-grey-800">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <textarea
+                    value={initialGuidance}
+                    onChange={(e) => setInitialGuidance(e.target.value)}
+                    placeholder="e.g. The accident happened at a roundabout, or the third party was a taxi..."
+                    className="w-full rounded-3xl bg-grey-10 border-none px-6 py-4 text-grey-800 placeholder-grey-400 focus:ring-2 focus:ring-green-200 outline-none resize-none h-24"
+                  />
+                </div>
+              )}
             </div>
           </section>
 

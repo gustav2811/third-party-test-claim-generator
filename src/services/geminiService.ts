@@ -14,7 +14,8 @@ export function getScenarioChat(claimNumber: string, defaults: AppSettings['defa
         Generate and refine realistic third-party motor vehicle accident scenarios.
         
         Context:
-        - First Party Vehicle: White Fiat 500
+        - First Party: ${defaults.firstPartyName} ${defaults.firstPartySurname} (ID: ${defaults.firstPartyId})
+        - First Party Vehicle: ${defaults.firstPartyVehicle}
         - Third Party ID Number to use: ${defaults.thirdPartyId}
         
         Rules:
@@ -38,8 +39,11 @@ export function getScenarioChat(claimNumber: string, defaults: AppSettings['defa
   });
 }
 
-export async function generateInitialScenario(chat: Chat, claimNumber: string, defaults: AppSettings['defaults']): Promise<Scenario> {
-  const prompt = `Generate an initial accident scenario for claim number ${claimNumber}.`;
+export async function generateInitialScenario(chat: Chat, claimNumber: string, defaults: AppSettings['defaults'], guidance?: string): Promise<Scenario> {
+  const prompt = guidance 
+    ? `Generate an initial accident scenario for claim number ${claimNumber}. Additional guidance: ${guidance}`
+    : `Generate an initial accident scenario for claim number ${claimNumber}.`;
+  
   const response = await chat.sendMessage({ message: prompt });
   
   const text = response.text;
@@ -48,6 +52,10 @@ export async function generateInitialScenario(chat: Chat, claimNumber: string, d
   const data = JSON.parse(text);
   return {
     claimNumber,
+    firstPartyName: defaults.firstPartyName,
+    firstPartySurname: defaults.firstPartySurname,
+    firstPartyId: defaults.firstPartyId,
+    firstPartyVehicle: defaults.firstPartyVehicle,
     thirdPartyId: defaults.thirdPartyId,
     ...data
   };
@@ -83,7 +91,10 @@ export async function generateDocumentImage(
 
     Scenario Context:
     - Claim Number: ${scenario.claimNumber}
-    - First Party (Our Insured Driver - White Fiat 500):
+    - First Party (Our Insured Driver):
+      - Name: ${scenario.firstPartyName} ${scenario.firstPartySurname}
+      - ID Number: ${scenario.firstPartyId}
+      - Vehicle: ${scenario.firstPartyVehicle}
       - Description of accident: ${scenario.firstPartyDescription}
       - Witnesses: ${scenario.witnesses}
     - Third Party:
