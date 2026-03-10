@@ -4,6 +4,8 @@ import { useAuth } from '../contexts/AuthContext';
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
 const ALLOWED_DOMAIN = import.meta.env.VITE_ALLOWED_DOMAIN as string | undefined;
 
+const SSO_DEBUG = typeof window !== 'undefined' && /[?&]sso_debug=1/.test(window.location.search);
+
 export function SSOGate({ children }: { children: React.ReactNode }) {
   const { user, isReady, signOut, error } = useAuth();
   const buttonRef = useRef<HTMLDivElement>(null);
@@ -17,7 +19,16 @@ export function SSOGate({ children }: { children: React.ReactNode }) {
   }, [isReady, user]);
 
   if (!GOOGLE_CLIENT_ID || !ALLOWED_DOMAIN) {
-    return <>{children}</>;
+    return (
+      <>
+        {SSO_DEBUG && (
+          <div className="bg-amber-200 text-amber-900 text-sm font-medium px-4 py-2 text-center">
+            SSO disabled: VITE_GOOGLE_CLIENT_ID {GOOGLE_CLIENT_ID ? 'set' : 'not set'}, VITE_ALLOWED_DOMAIN {ALLOWED_DOMAIN ? 'set' : 'not set'}. Add both in Vercel and redeploy.
+          </div>
+        )}
+        {children}
+      </>
+    );
   }
 
   if (!isReady) {
