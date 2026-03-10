@@ -16,7 +16,7 @@ function SsoDebugBar({ hasClientId, hasDomain }: { hasClientId: boolean; hasDoma
 }
 
 export function SSOGate({ children }: { children: React.ReactNode }) {
-  const { user, isReady, signOut, error, ssoConfig, configLoaded } = useAuth();
+  const { user, isReady, signIn, error, ssoConfig, configLoaded } = useAuth();
   const buttonRef = useRef<HTMLDivElement>(null);
   const showDebug = useSsoDebug();
   const hasClientId = Boolean(ssoConfig?.googleClientId);
@@ -79,6 +79,13 @@ export function SSOGate({ children }: { children: React.ReactNode }) {
             </p>
           )}
           <div ref={buttonRef} className="flex justify-center mb-6" />
+          <button
+            type="button"
+            onClick={signIn}
+            className="w-full py-3 mb-4 bg-grey-800 text-white rounded-full font-bold shadow-button-hidden hover:shadow-button hover:-translate-y-1 transition-all duration-300 ease-out"
+          >
+            Continue with Google
+          </button>
           <p className="text-sm text-grey-500">
             Only accounts from your organisation&apos;s Google Workspace can access this page.
           </p>
