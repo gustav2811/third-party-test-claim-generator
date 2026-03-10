@@ -1,0 +1,5 @@
+{
+  "name": "Test Claim Generator",
+  "description": "Generate realistic test claim documents for third-party insurance systems using AI.",
+  "requestFramePermissions": []
+}
