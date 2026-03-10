@@ -1,31 +1,50 @@
 import React, { useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
-const ALLOWED_DOMAIN = import.meta.env.VITE_ALLOWED_DOMAIN as string | undefined;
+function useSsoDebug(): boolean {
+  if (typeof window === 'undefined') return false;
+  return /[?&]sso_debug=1/.test(window.location.search);
+}
 
-const SSO_DEBUG = typeof window !== 'undefined' && /[?&]sso_debug=1/.test(window.location.search);
+function SsoDebugBar({ hasClientId, hasDomain }: { hasClientId: boolean; hasDomain: boolean }): React.ReactNode {
+  return (
+    <div className="fixed top-0 left-0 right-0 z-[9999] bg-amber-400 text-amber-950 text-sm font-medium px-4 py-2 text-center shadow">
+      SSO debug: VITE_GOOGLE_CLIENT_ID={hasClientId ? 'set' : 'NOT SET'}, VITE_ALLOWED_DOMAIN={hasDomain ? 'set' : 'NOT SET'}
+      {!hasClientId || !hasDomain ? ' — Add both in Vercel (Production) and redeploy.' : ''}
+    </div>
+  );
+}
 
 export function SSOGate({ children }: { children: React.ReactNode }) {
-  const { user, isReady, signOut, error } = useAuth();
+  const { user, isReady, signOut, error, ssoConfig, configLoaded } = useAuth();
   const buttonRef = useRef<HTMLDivElement>(null);
+  const showDebug = useSsoDebug();
+  const hasClientId = Boolean(ssoConfig?.googleClientId);
+  const hasDomain = Boolean(ssoConfig?.allowedDomain);
 
   useEffect(() => {
-    if (!GOOGLE_CLIENT_ID || !ALLOWED_DOMAIN || user || !isReady || !buttonRef.current) return;
+    if (!hasClientId || !hasDomain || user || !isReady || !buttonRef.current) return;
     const g = window.google;
     if (g?.accounts?.id?.renderButton) {
       g.accounts.id.renderButton(buttonRef.current, { theme: 'filled_black', size: 'large' });
     }
-  }, [isReady, user]);
+  }, [isReady, user, hasClientId, hasDomain]);
 
-  if (!GOOGLE_CLIENT_ID || !ALLOWED_DOMAIN) {
+  if (!configLoaded) {
     return (
       <>
-        {SSO_DEBUG && (
-          <div className="bg-amber-200 text-amber-900 text-sm font-medium px-4 py-2 text-center">
-            SSO disabled: VITE_GOOGLE_CLIENT_ID {GOOGLE_CLIENT_ID ? 'set' : 'not set'}, VITE_ALLOWED_DOMAIN {ALLOWED_DOMAIN ? 'set' : 'not set'}. Add both in Vercel and redeploy.
-          </div>
-        )}
+        {showDebug && <SsoDebugBar hasClientId={false} hasDomain={false} />}
+        <div className="flex items-center justify-center min-h-screen bg-grey-10 text-grey-500 font-sans">
+          Loading…
+        </div>
+      </>
+    );
+  }
+
+  if (!hasClientId || !hasDomain) {
+    return (
+      <>
+        {showDebug && <SsoDebugBar hasClientId={hasClientId} hasDomain={hasDomain} />}
         {children}
       </>
     );
@@ -33,21 +52,26 @@ export function SSOGate({ children }: { children: React.ReactNode }) {
 
   if (!isReady) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-grey-10 text-grey-500 font-sans">
-        Loading…
-      </div>
+      <>
+        {showDebug && <SsoDebugBar hasClientId={hasClientId} hasDomain={hasDomain} />}
+        <div className="flex items-center justify-center min-h-screen bg-grey-10 text-grey-500 font-sans">
+          Loading…
+        </div>
+      </>
     );
   }
 
   if (!user) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-grey-10 p-4 font-sans">
+      <>
+        {showDebug && <SsoDebugBar hasClientId={hasClientId} hasDomain={hasDomain} />}
+        <div className="flex flex-col items-center justify-center min-h-screen bg-grey-10 p-4 font-sans">
         <div className="max-w-lg w-full bg-white rounded-4xl shadow-solid p-10 text-center animate-fade-in-from-bottom">
           <h2 className="text-3xl font-black leading-tighter text-grey-800 mb-4">
             Sign in <span className="text-green-200">required</span>
           </h2>
           <p className="text-grey-600 font-extralight tracking-compact leading-6 mb-6">
-            This app is restricted to <strong>@{ALLOWED_DOMAIN}</strong>. Sign in with your work Google account.
+            This app is restricted to <strong>@{ssoConfig.allowedDomain}</strong>. Sign in with your work Google account.
           </p>
           {error && (
             <p className="text-red-500 mb-6 font-medium" data-testid="sso-error">
@@ -60,16 +84,21 @@ export function SSOGate({ children }: { children: React.ReactNode }) {
           </p>
         </div>
       </div>
+      </>
     );
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      {showDebug && <SsoDebugBar hasClientId={hasClientId} hasDomain={hasDomain} />}
+      {children}
+    </>
+  );
 }
 
 export function SSOHeaderSignOut() {
-  const { user, signOut } = useAuth();
-  const ALLOWED_DOMAIN = import.meta.env.VITE_ALLOWED_DOMAIN as string | undefined;
-  if (!ALLOWED_DOMAIN || !user) return null;
+  const { user, signOut, ssoConfig } = useAuth();
+  if (!ssoConfig?.allowedDomain || !user) return null;
   return (
     <div className="flex items-center gap-3">
       <span className="text-sm text-grey-600 truncate max-w-[160px]" title={user.email}>

@@ -1,7 +1,9 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
-const ALLOWED_DOMAIN = (import.meta.env.VITE_ALLOWED_DOMAIN as string | undefined)?.toLowerCase();
+export interface SsoConfig {
+  googleClientId: string;
+  allowedDomain: string;
+}
 
 /** Google Identity Services (GSI) – shape we need from window.google */
 interface GoogleGSI {
@@ -40,6 +42,8 @@ interface AuthContextValue {
   signIn: () => void;
   signOut: () => void;
   error: string | null;
+  ssoConfig: SsoConfig | null;
+  configLoaded: boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -80,8 +84,33 @@ function clearSession(): void {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [idToken, setIdToken] = useState<string | null>(null);
+  const [ssoConfig, setSsoConfig] = useState<SsoConfig | null>(null);
+  const [configLoaded, setConfigLoaded] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadConfig() {
+      try {
+        const res = await fetch('/api/config');
+        const data = (await res.json()) as { googleClientId?: string; allowedDomain?: string };
+        const clientId = (data.googleClientId ?? '').trim();
+        const domain = (data.allowedDomain ?? '').trim().toLowerCase();
+        if (clientId && domain) {
+          setSsoConfig({ googleClientId: clientId, allowedDomain: domain });
+        }
+      } catch {
+        const clientId = (import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined)?.trim();
+        const domain = (import.meta.env.VITE_ALLOWED_DOMAIN as string | undefined)?.trim().toLowerCase();
+        if (clientId && domain) {
+          setSsoConfig({ googleClientId: clientId, allowedDomain: domain });
+        }
+      }
+      setConfigLoaded(true);
+    }
+    loadConfig();
+  }, []);
+
 
   const signOut = useCallback(() => {
     clearSession();
@@ -99,7 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!GOOGLE_CLIENT_ID || !ALLOWED_DOMAIN) {
+    if (!configLoaded || !ssoConfig) {
       setIsReady(true);
       return;
     }
@@ -125,8 +154,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       g.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        hosted_domain: ALLOWED_DOMAIN,
+        client_id: ssoConfig.googleClientId,
+        hosted_domain: ssoConfig.allowedDomain,
         callback: (response: { credential: string }) => {
           const payload = parseJwtPayload(response.credential);
           if (!payload?.email) {
@@ -157,7 +186,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       script.remove();
     };
-  }, []);
+  }, [ssoConfig, configLoaded]);
+
 
   const value: AuthContextValue = {
     user,
@@ -166,6 +196,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signIn,
     signOut,
     error,
+    ssoConfig,
+    configLoaded,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
