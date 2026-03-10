@@ -9,8 +9,8 @@ function useSsoDebug(): boolean {
 function SsoDebugBar({ hasClientId, hasDomain }: { hasClientId: boolean; hasDomain: boolean }): React.ReactNode {
   return (
     <div className="fixed top-0 left-0 right-0 z-[9999] bg-amber-400 text-amber-950 text-sm font-medium px-4 py-2 text-center shadow">
-      SSO debug: VITE_GOOGLE_CLIENT_ID={hasClientId ? 'set' : 'NOT SET'}, VITE_ALLOWED_DOMAIN={hasDomain ? 'set' : 'NOT SET'}
-      {!hasClientId || !hasDomain ? ' — Add both in Vercel (Production) and redeploy.' : ''}
+      SSO debug: client_id={hasClientId ? 'set' : 'NOT SET'}, allowed_domain={hasDomain ? 'set' : 'NOT SET'}
+      {!hasClientId || !hasDomain ? ' — Set SSO_GOOGLE_CLIENT_ID and SSO_ALLOWED_DOMAIN in Vercel (not VITE_*).' : ''}
     </div>
   );
 }

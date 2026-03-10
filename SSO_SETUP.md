@@ -44,7 +44,7 @@ This app uses **Google Identity Services** with a **hosted domain**. Google’s 
    - Production: `https://third-party-test-claim-generator.vercel.app` (or same as origin; GIS can use the current page).
 7. Click **Create**.
 8. Copy the **Client ID** (looks like `xxxxx.apps.googleusercontent.com`).  
-   You’ll use it as `VITE_GOOGLE_CLIENT_ID` in the app.
+   You’ll use it as `SSO_GOOGLE_CLIENT_ID` in Vercel.
 
 ---
 
@@ -52,25 +52,27 @@ This app uses **Google Identity Services** with a **hosted domain**. Google’s 
 
 - Your **hosted domain** is the part after `@` in your work email, e.g. `company.com`.
 - It must be a [Google Workspace](https://workspace.google.com/) domain (or the domain you use with Google sign-in for work).
-- You’ll use it as `VITE_ALLOWED_DOMAIN` in the app (e.g. `company.com`).
+- You’ll use it as `SSO_ALLOWED_DOMAIN` in Vercel (e.g. `company.com`).
 
 ---
 
-## Step 5: Set environment variables in the app
+## Step 5: Set environment variables
+
+**Important:** Use **`SSO_GOOGLE_CLIENT_ID`** and **`SSO_ALLOWED_DOMAIN`** (not `VITE_*`).  
+Vercel exposes `VITE_*` only to the build step, not to serverless functions. Our SSO config is loaded at runtime from `/api/config`, which needs variables the API can see.
 
 1. In the project root, copy `.env.example` to `.env` (or configure env in Vercel/hosting).
 2. Add:
 
 ```bash
-# Google SSO (domain-restricted)
-VITE_GOOGLE_CLIENT_ID="YOUR_CLIENT_ID.apps.googleusercontent.com"
-VITE_ALLOWED_DOMAIN="yourcompany.com"
+# Google SSO (domain-restricted) – use SSO_ prefix so Vercel API routes can read them
+SSO_GOOGLE_CLIENT_ID="YOUR_CLIENT_ID.apps.googleusercontent.com"
+SSO_ALLOWED_DOMAIN="yourcompany.com"
 ```
 
-- **VITE_GOOGLE_CLIENT_ID**: the OAuth Client ID from Step 3.
-- **VITE_ALLOWED_DOMAIN**: the hosted domain from Step 4 (no `@`, no `https://`).
+For **local dev** with `.env.local`, you can also use `VITE_GOOGLE_CLIENT_ID` and `VITE_ALLOWED_DOMAIN` (the app falls back to those when the API isn’t available).
 
-3. For **production** (e.g. Vercel): set the same variables in the project’s **Environment variables** and redeploy.
+For **production** (e.g. Vercel): set `SSO_GOOGLE_CLIENT_ID` and `SSO_ALLOWED_DOMAIN` in the project’s **Environment variables** (Production) and redeploy.
 
 ---
 
@@ -96,7 +98,7 @@ VITE_ALLOWED_DOMAIN="yourcompany.com"
 If you want your API (e.g. `/api/chat`) to allow only signed-in users from your domain:
 
 1. The front end sends the **Google ID token** in a header (e.g. `Authorization: Bearer <id_token>`).
-2. In the API route, verify the token with Google’s libraries or a JWT library and check the `hd` claim equals `VITE_ALLOWED_DOMAIN` (or the same value from env).  
+2. In the API route, verify the token with Google’s libraries or a JWT library and check the `hd` claim equals `SSO_ALLOWED_DOMAIN` (or the same value from env).  
    Reject requests with missing or invalid tokens or wrong domain.
 
 If you want, we can add this token verification to your existing API routes next.
@@ -109,8 +111,8 @@ If you want, we can add this token verification to your existing API routes next
 | ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
 | “Access blocked: This app’s request is invalid” | Correct Client ID; authorised origins/redirect URIs include the exact URL you’re using (port, no trailing slash).     |
 | “This app isn’t verified”                       | For External consent, use “Advanced” → “Go to … (unsafe)” for testing, or submit for verification for production.     |
-| Only “Loading…” or no button                    | `VITE_GOOGLE_CLIENT_ID` and `VITE_ALLOWED_DOMAIN` set; page loaded over HTTP/HTTPS (not `file://`).                   |
-| “Wrong domain” after sign-in                    | `VITE_ALLOWED_DOMAIN` matches your work domain exactly (e.g. `company.com`).                                          |
+| Only “Loading…” or no button                    | SSO vars set in Vercel; page loaded over HTTP/HTTPS (not `file://`). |
+| “Wrong domain” after sign-in                    | `SSO_ALLOWED_DOMAIN` matches your work domain exactly (e.g. `company.com`). |
 | Button doesn’t appear                           | Browser console for script/network errors; ensure the GIS script loads from `https://accounts.google.com/gsi/client`. |
 
 ---
@@ -120,5 +122,5 @@ If you want, we can add this token verification to your existing API routes next
 - [ ] OAuth consent screen configured (Internal or External).
 - [ ] Web application OAuth client created; Client ID copied.
 - [ ] Authorized JavaScript origins and redirect URIs include your app URL(s).
-- [ ] `VITE_GOOGLE_CLIENT_ID` and `VITE_ALLOWED_DOMAIN` set in `.env` and production.
+- [ ] **`SSO_GOOGLE_CLIENT_ID`** and **`SSO_ALLOWED_DOMAIN`** set in Vercel (Production) – use these names, not VITE_*.
 - [ ] Sign-in tested with a @yourcompany.com account.
