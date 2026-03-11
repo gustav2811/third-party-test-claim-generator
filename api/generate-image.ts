@@ -19,6 +19,7 @@ interface DocumentRequirement {
   id: string;
   title: string;
   description: string;
+  documentGuidelines?: string;
 }
 
 interface GenerateImageRequestBody {
@@ -29,7 +30,7 @@ interface GenerateImageRequestBody {
 
 export default async function handler(
   req: VercelRequest,
-  res: VercelResponse,
+  res: VercelResponse
 ): Promise<void> {
   if (req.method !== "POST") {
     res.status(405).json({ error: "Method not allowed" });
@@ -77,8 +78,18 @@ export default async function handler(
       Document to Generate:
       - Title: ${requirement.title}
       - Description: ${requirement.description}
+      - Document Guidelines: ${
+        requirement.documentGuidelines ?? "None provided."
+      }
 
-      ${exampleBase64 ? "An example document is provided as an image. Please use it as a structural and stylistic reference, but fill it with the scenario information." : "Please generate a realistic looking document from scratch."}
+      ${
+        exampleBase64
+          ? "An example document is provided as an image. Please use it as a structural and stylistic reference, but fill it with the scenario information."
+          : "Please generate a realistic looking document from scratch."
+      }
+
+      IMPORTANT:
+      - The document generated are primarily for the third party to make a liability claim against our driver. Hence, the first party context is only relevant for the claim form and the letter of demand.
     `;
 
     const parts: Array<

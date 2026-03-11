@@ -18,6 +18,7 @@ export interface DocumentRequirement {
   id: string;
   title: string;
   description: string;
+  documentGuidelines?: string;
 }
 
 export interface AppSettings {
