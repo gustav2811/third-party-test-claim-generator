@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { DocumentRequirement, Scenario } from '../types';
 import { generateDocumentImage } from '../services/geminiService';
-import { Loader2, Download } from 'lucide-react';
+import { Loader2, Download, MessageSquare, X } from 'lucide-react';
 
 interface Props {
   key?: React.Key;
@@ -13,12 +13,19 @@ export function DocumentItem({ requirement, scenario }: Props) {
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showGuidance, setShowGuidance] = useState(false);
+  const [documentGuidance, setDocumentGuidance] = useState('');
+
+  const requirementWithGuidance: DocumentRequirement = {
+    ...requirement,
+    ...(documentGuidance.trim() ? { documentGuidelines: documentGuidance.trim() } : {}),
+  };
 
   const handleGenerate = async () => {
     setIsGenerating(true);
     setError(null);
     try {
-      const result = await generateDocumentImage(scenario, requirement);
+      const result = await generateDocumentImage(scenario, requirementWithGuidance);
       setGeneratedImage(result);
     } catch (err: any) {
       console.error(err);
@@ -34,6 +41,36 @@ export function DocumentItem({ requirement, scenario }: Props) {
         <h3 className="text-xl font-bold text-grey-800 mb-2">{requirement.title}</h3>
         <p className="text-grey-600 font-extralight tracking-compact leading-6">{requirement.description}</p>
       </div>
+
+      {!showGuidance ? (
+        <button
+          type="button"
+          onClick={() => setShowGuidance(true)}
+          className="text-grey-500 font-bold text-sm hover:text-grey-800 transition-colors flex items-center mb-4"
+        >
+          <MessageSquare className="w-4 h-4 mr-2" />
+          Customise the scenario
+        </button>
+      ) : (
+        <div className="animate-fade-in space-y-2 mb-4">
+          <div className="flex justify-between items-center">
+            <label className="text-sm font-bold text-grey-600">Guidance (Optional)</label>
+            <button
+              type="button"
+              onClick={() => { setShowGuidance(false); setDocumentGuidance(''); }}
+              className="text-grey-400 hover:text-grey-800"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <textarea
+            value={documentGuidance}
+            onChange={(e) => setDocumentGuidance(e.target.value)}
+            placeholder="e.g. The accident happened at a roundabout, or the third party was a taxi..."
+            className="w-full rounded-3xl bg-grey-10 border-none px-6 py-4 text-grey-800 placeholder-grey-400 focus:ring-2 focus:ring-green-200 outline-none resize-none h-24"
+          />
+        </div>
+      )}
 
       <div className="mt-auto flex flex-col space-y-4">
         {error && <p className="text-sm text-red-600 bg-red-50 p-3 rounded-xl">{error}</p>}
