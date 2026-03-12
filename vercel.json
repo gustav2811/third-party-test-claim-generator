@@ -2,7 +2,8 @@
   "functions": {
     "api/generate-claim-form-pdf.ts": {
       "memory": 3008,
-      "maxDuration": 60
+      "maxDuration": 60,
+      "includeFiles": "node_modules/@sparticuz/chromium/**"
     }
   }
 }
