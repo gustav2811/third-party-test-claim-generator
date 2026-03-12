@@ -28,10 +28,7 @@ interface DocumentRequirement {
 }
 
 /** Document IDs that receive full scenario context (first + third party). Excludes damage photos (see DOCS_DAMAGE_PHOTO). */
-const DOCS_FULL_SCENARIO = new Set<string>([
-  "claim_form",
-  "letter_of_demand",
-]);
+const DOCS_FULL_SCENARIO = new Set<string>(["claim_form", "letter_of_demand"]);
 
 /** Damage photos get minimal context only: first party vehicle; third party vehicle, licence plate, version of events. */
 const DOCS_DAMAGE_PHOTO = new Set<string>([
@@ -157,7 +154,36 @@ export default async function handler(
 
     const documentSpecificPrompt = DOCUMENT_PROMPTS[requirement.id] ?? "";
 
-    const prompt = `
+    let prompt = "";
+
+    if (useDamagePhotoContext) {
+      prompt = `
+      You are an expert insurance claims photographer.
+      Generate a realistic, unedited photograph of a vehicle accident scene or vehicle damage based on the following scenario.
+      Do NOT generate a document, paper, or printed photo. Do NOT include any overlaid text, captions, or summaries in the image.
+      It must look like a photo taken on an Iphone at the scene.
+
+      Scenario Context:
+      ${scenarioContext}
+
+      Photo to Generate:
+      - Title: ${requirement.title}
+      - Description: ${requirement.description}
+      ${documentSpecificPrompt ? `- Photo-specific instructions: ${documentSpecificPrompt}` : ""}
+
+      ${requirement.documentGuidelines ? `Additional User Information:\n      ${requirement.documentGuidelines}` : ""}
+
+      ${
+        exampleBase64
+          ? "An example photo is provided. Please use it as a structural and stylistic reference, but adjust the vehicles and damage to match the scenario information."
+          : "Please generate a realistic looking photograph from scratch."
+      }
+
+      IMPORTANT:
+      - This must be a pure photograph. No text, no document borders, no handwriting.
+      `;
+    } else {
+      prompt = `
       You are an expert document generator for a South African insurance system.
       Generate a realistic image of a document based on the following scenario and requirements.
       All information MUST match the scenario exactly.
@@ -180,7 +206,8 @@ export default async function handler(
 
       IMPORTANT:
       - Documents are for the third party to support a liability claim against our driver where applicable. Use only the context provided above for this document type.
-    `;
+      `;
+    }
 
     const parts: Array<
       { text: string } | { inlineData: { mimeType: string; data: string } }
