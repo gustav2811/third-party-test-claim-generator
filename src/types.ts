@@ -8,6 +8,11 @@ export interface Scenario {
   witnesses: string;
   thirdPartyName: string;
   thirdPartySurname: string;
+  thirdPartyVehicle: string;
+  thirdPartyVehicleVin: string;
+  thirdPartyLicencePlate: string;
+  thirdPartyInsuranceCompany: string;
+  thirdPartyPolicyNumber: string;
   thirdPartyId: string;
   thirdPartyVersion: string;
 }

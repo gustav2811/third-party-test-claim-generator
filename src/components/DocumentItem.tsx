@@ -46,19 +46,23 @@ export function DocumentItem({ requirement, scenario }: Props) {
         <button
           type="button"
           onClick={() => setShowGuidance(true)}
-          className="text-grey-500 font-bold text-sm hover:text-grey-800 transition-colors flex items-center mb-4"
+          className="text-grey-500 font-bold text-sm hover:text-grey-800 transition-colors flex items-center mb-6 group"
         >
-          <MessageSquare className="w-4 h-4 mr-2" />
-          Customise the scenario
+          <div className="bg-grey-10 p-2 rounded-full mr-3 group-hover:bg-green-100 group-hover:text-green-600 transition-colors">
+            <MessageSquare className="w-4 h-4" />
+          </div>
+          Add specific document instructions
         </button>
       ) : (
-        <div className="animate-fade-in space-y-2 mb-4">
-          <div className="flex justify-between items-center">
-            <label className="text-sm font-bold text-grey-600">Guidance (Optional)</label>
+        <div className="animate-fade-in mb-6 bg-grey-10 p-1 rounded-3xl border border-grey-50 focus-within:ring-2 focus-within:ring-green-200 transition-all">
+          <div className="flex justify-between items-center px-4 pt-3 pb-1">
+            <label className="text-xs font-bold text-grey-600 uppercase tracking-wider">
+              Additional Instructions
+            </label>
             <button
               type="button"
               onClick={() => { setShowGuidance(false); setDocumentGuidance(''); }}
-              className="text-grey-400 hover:text-grey-800"
+              className="text-grey-400 hover:text-grey-800 transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
@@ -66,8 +70,8 @@ export function DocumentItem({ requirement, scenario }: Props) {
           <textarea
             value={documentGuidance}
             onChange={(e) => setDocumentGuidance(e.target.value)}
-            placeholder="e.g. The accident happened at a roundabout, or the third party was a taxi..."
-            className="w-full rounded-3xl bg-grey-10 border-none px-6 py-4 text-grey-800 placeholder-grey-400 focus:ring-2 focus:ring-green-200 outline-none resize-none h-24"
+            placeholder="e.g. Make the document look old and crumpled, or specify a certain detail..."
+            className="w-full bg-transparent border-none px-4 py-2 text-grey-800 placeholder-grey-400 focus:outline-none resize-none h-20 text-sm"
           />
         </div>
       )}

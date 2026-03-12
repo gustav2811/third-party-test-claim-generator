@@ -163,6 +163,10 @@ export default function App() {
                     <div>
                       <h3 className="text-green-200 font-bold mb-2">Third Party</h3>
                       <p className="font-bold text-white mb-1">{scenario.thirdPartyName} {scenario.thirdPartySurname}</p>
+                      <p className="text-sm text-grey-300 mb-1">Vehicle: {scenario.thirdPartyVehicle || 'Not provided'}</p>
+                      <p className="text-sm text-grey-400 mb-1">VIN: {scenario.thirdPartyVehicleVin || '—'}</p>
+                      <p className="text-sm text-grey-400 mb-1">Licence plate: {scenario.thirdPartyLicencePlate || '—'}</p>
+                      <p className="text-sm text-grey-400 mb-1">Insurance: {scenario.thirdPartyInsuranceCompany || '—'} ({scenario.thirdPartyPolicyNumber || '—'})</p>
                       <p className="text-sm text-grey-400 mb-4">ID: {scenario.thirdPartyId}</p>
                       <h4 className="text-sm font-bold text-grey-300 mb-1">Version of Events</h4>
                       <p className="font-extralight tracking-compact leading-6 text-grey-100">{scenario.thirdPartyVersion}</p>

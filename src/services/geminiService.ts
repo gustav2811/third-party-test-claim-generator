@@ -17,6 +17,11 @@ function buildSystemInstruction(defaults: AppSettings['defaults']): string {
     - Provide a realistic description of the accident from the first party's perspective.
     - Provide a realistic version of events from the third party's perspective.
     - Invent realistic South African names for the third party and witnesses.
+    - Include the third party vehicle make and model.
+    - The third party vehicle must be a common, middle-class South African vehicle (for example: Toyota Corolla, VW Polo, Hyundai i20, Ford Fiesta, Renault Kwid, Nissan Almera, Kia Rio, Suzuki Swift).
+    - Generate a random 17-character VIN for the third party vehicle (alphanumeric, no I/O/Q).
+    - Generate a South African licence plate for the third party vehicle (e.g. CA 123-456 GP or similar provincial format).
+    - Generate a realistic South African insurance company name for the third party (e.g. Discovery, Outsurance, King Price, Budget, 1st for Women, Hollard, Auto & General) and a plausible policy number (alphanumeric).
     
     Output Format:
     Always return the scenario as a JSON object matching this schema:
@@ -25,6 +30,11 @@ function buildSystemInstruction(defaults: AppSettings['defaults']): string {
       "witnesses": "string (names and contact info, or 'None')",
       "thirdPartyName": "string",
       "thirdPartySurname": "string",
+      "thirdPartyVehicle": "string (make and model only)",
+      "thirdPartyVehicleVin": "string (17 characters, alphanumeric, no I/O/Q)",
+      "thirdPartyLicencePlate": "string (South African format)",
+      "thirdPartyInsuranceCompany": "string",
+      "thirdPartyPolicyNumber": "string",
       "thirdPartyVersion": "string"
     }
   `;
