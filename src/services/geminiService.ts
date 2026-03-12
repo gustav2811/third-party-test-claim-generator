@@ -1,8 +1,19 @@
-import type { Content } from '@google/genai';
-import { DocumentRequirement, Scenario, AppSettings } from '../types';
-import { db } from './db';
+import type { Content } from "@google/genai";
+import type { DocumentRequirement, Scenario, AppSettings } from "../types";
+import { db } from "./db";
 
-function buildSystemInstruction(defaults: AppSettings['defaults']): string {
+/** VIN allowed chars: [^\\Wioq] = 0-9 and A–Z except I,O,Q (validator lowercases before test) */
+const VIN_CHARS = "0123456789abcdefghjklmnprstuvwxyz";
+
+function generateRandomVIN(): string {
+  let vin = "";
+  for (let i = 0; i < 17; i++) {
+    vin += VIN_CHARS[Math.floor(Math.random() * VIN_CHARS.length)];
+  }
+  return vin;
+}
+
+function buildSystemInstruction(defaults: AppSettings["defaults"]): string {
   return `
     You are an expert insurance claims scenario generator for a South African insurance company (Naked Insurance).
     Generate and refine realistic third-party motor vehicle accident scenarios.
@@ -19,7 +30,6 @@ function buildSystemInstruction(defaults: AppSettings['defaults']): string {
     - Invent realistic South African names for the third party and witnesses.
     - Include the third party vehicle make and model.
     - The third party vehicle must be a common, middle-class South African vehicle (for example: Toyota Corolla, VW Polo, Hyundai i20, Ford Fiesta, Renault Kwid, Nissan Almera, Kia Rio, Suzuki Swift).
-    - Generate a random 17-character VIN for the third party vehicle (alphanumeric, no I/O/Q).
     - Generate a South African licence plate for the third party vehicle (e.g. CA 123-456 GP or similar provincial format).
     - Generate a realistic South African insurance company name for the third party (e.g. Discovery, Outsurance, King Price, Budget, 1st for Women, Hollard, Auto & General) and a plausible policy number (alphanumeric).
     
@@ -31,7 +41,6 @@ function buildSystemInstruction(defaults: AppSettings['defaults']): string {
       "thirdPartyName": "string",
       "thirdPartySurname": "string",
       "thirdPartyVehicle": "string (make and model only)",
-      "thirdPartyVehicleVin": "string (17 characters, alphanumeric, no I/O/Q)",
       "thirdPartyLicencePlate": "string (South African format)",
       "thirdPartyInsuranceCompany": "string",
       "thirdPartyPolicyNumber": "string",
@@ -48,10 +57,14 @@ export class ProxyChat {
     this.systemInstruction = systemInstruction;
   }
 
-  async sendMessage({ message }: { message: string }): Promise<{ text: string }> {
-    const res = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+  async sendMessage({
+    message,
+  }: {
+    message: string;
+  }): Promise<{ text: string }> {
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         message,
         history: this.history,
@@ -60,22 +73,30 @@ export class ProxyChat {
     });
 
     if (!res.ok) {
-      const { error } = await res.json() as { error: string };
+      const { error } = (await res.json()) as { error: string };
       throw new Error(`Chat API error: ${error}`);
     }
 
-    const data = await res.json() as { text: string; history: Content[] };
+    const data = (await res.json()) as { text: string; history: Content[] };
     this.history = data.history;
     return { text: data.text };
   }
 }
 
-export function getScenarioChat(claimNumber: string, defaults: AppSettings['defaults']): ProxyChat {
+export function getScenarioChat(
+  claimNumber: string,
+  defaults: AppSettings["defaults"],
+): ProxyChat {
   void claimNumber;
   return new ProxyChat(buildSystemInstruction(defaults));
 }
 
-export async function generateInitialScenario(chat: ProxyChat, claimNumber: string, defaults: AppSettings['defaults'], guidance?: string): Promise<Scenario> {
+export async function generateInitialScenario(
+  chat: ProxyChat,
+  claimNumber: string,
+  defaults: AppSettings["defaults"],
+  guidance?: string,
+): Promise<Scenario> {
   const prompt = guidance
     ? `Generate an initial accident scenario for claim number ${claimNumber}. Additional guidance: ${guidance}`
     : `Generate an initial accident scenario for claim number ${claimNumber}.`;
@@ -83,9 +104,18 @@ export async function generateInitialScenario(chat: ProxyChat, claimNumber: stri
   const response = await chat.sendMessage({ message: prompt });
 
   const text = response.text;
-  if (!text) throw new Error('Failed to generate scenario');
+  if (!text) throw new Error("Failed to generate scenario");
 
-  const data = JSON.parse(text) as Omit<Scenario, 'claimNumber' | 'firstPartyName' | 'firstPartySurname' | 'firstPartyId' | 'firstPartyVehicle' | 'thirdPartyId'>;
+  const data = JSON.parse(text) as Omit<
+    Scenario,
+    | "claimNumber"
+    | "firstPartyName"
+    | "firstPartySurname"
+    | "firstPartyId"
+    | "firstPartyVehicle"
+    | "thirdPartyId"
+    | "thirdPartyVehicleVin"
+  >;
   return {
     claimNumber,
     firstPartyName: defaults.firstPartyName,
@@ -93,21 +123,30 @@ export async function generateInitialScenario(chat: ProxyChat, claimNumber: stri
     firstPartyId: defaults.firstPartyId,
     firstPartyVehicle: defaults.firstPartyVehicle,
     thirdPartyId: defaults.thirdPartyId,
+    thirdPartyVehicleVin: generateRandomVIN(),
     ...data,
   };
 }
 
-export async function refineScenario(chat: ProxyChat, scenario: Scenario, editPrompt: string): Promise<Scenario> {
+export async function refineScenario(
+  chat: ProxyChat,
+  scenario: Scenario,
+  editPrompt: string,
+): Promise<Scenario> {
   const response = await chat.sendMessage({ message: editPrompt });
 
   const text = response.text;
-  if (!text) throw new Error('Failed to refine scenario');
+  if (!text) throw new Error("Failed to refine scenario");
 
   const data = JSON.parse(text) as Partial<Scenario>;
-  return {
+  const merged: Scenario = {
     ...scenario,
     ...data,
   };
+  if (data.thirdPartyVehicleVin !== undefined) {
+    merged.thirdPartyVehicleVin = generateRandomVIN();
+  }
+  return merged;
 }
 
 export async function generateDocumentImage(
@@ -116,17 +155,17 @@ export async function generateDocumentImage(
 ): Promise<string> {
   const exampleBase64 = await db.get(requirement.id);
 
-  const res = await fetch('/api/generate-image', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+  const res = await fetch("/api/generate-image", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ scenario, requirement, exampleBase64 }),
   });
 
   if (!res.ok) {
-    const { error } = await res.json() as { error: string };
+    const { error } = (await res.json()) as { error: string };
     throw new Error(`Image generation API error: ${error}`);
   }
 
-  const { imageData } = await res.json() as { imageData: string };
+  const { imageData } = (await res.json()) as { imageData: string };
   return imageData;
 }
