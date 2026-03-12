@@ -154,22 +154,96 @@ export async function refineScenario(
   return merged;
 }
 
+/** VIN/engine chars shared with the API: deterministic engine number derivation */
+function deriveEngineNumber(vin: string): string {
+  const seed = vin.replace(/[^A-Z0-9]/gi, "").toUpperCase();
+  return `ENG${seed.slice(-8).padStart(8, "0")}`;
+}
+
+function fillClaimTemplate(
+  html: string,
+  data: Record<string, string>,
+): string {
+  return html.replace(/\{\{(\w+)\}\}/g, (_, key) => data[key] ?? "");
+}
+
 export async function generateClaimFormPdf(
   scenario: Scenario,
   settings: AppSettings,
 ): Promise<Blob> {
-  const res = await fetch("/api/generate-claim-form-pdf", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ scenario, settings }),
-  });
+  const defaults = settings.defaults;
 
-  if (!res.ok) {
-    const { error } = (await res.json()) as { error: string };
-    throw new Error(`PDF generation failed: ${error}`);
+  const thirdPartyEmail = `${(scenario.thirdPartyName ?? "").toLowerCase().replace(/\s+/g, "")}.${(scenario.thirdPartySurname ?? "").toLowerCase().replace(/\s+/g, "")}@yahoo.com`;
+  const thirdPartyContactPerson = `${scenario.thirdPartyName ?? ""} ${scenario.thirdPartySurname ?? ""}`.trim();
+
+  const data: Record<string, string> = {
+    claimNumber: scenario.claimNumber ?? "",
+    accidentReportNumber: scenario.accidentReportNumber ?? "",
+    accidentDate: scenario.accidentDate ?? "",
+    accidentTime: scenario.accidentTime ?? "",
+    accidentPlace: scenario.accidentPlace ?? "",
+    firstPartyName: scenario.firstPartyName ?? "",
+    firstPartySurname: scenario.firstPartySurname ?? "",
+    firstPartyId: scenario.firstPartyId ?? "",
+    firstPartyVehicle: scenario.firstPartyVehicle ?? "",
+    firstPartyVehicleColour: defaults.firstPartyVehicleColour ?? "White",
+    firstPartyVehicleRegistration: defaults.firstPartyVehicleRegistration ?? "",
+    witnesses: scenario.witnesses ?? "",
+    thirdPartyName: scenario.thirdPartyName ?? "",
+    thirdPartySurname: scenario.thirdPartySurname ?? "",
+    thirdPartyId: scenario.thirdPartyId ?? "",
+    thirdPartyEmail,
+    thirdPartyContactPerson,
+    thirdPartyContactNumber: "082 800 1234",
+    thirdPartyInsured: "Y",
+    thirdPartyVehicle: scenario.thirdPartyVehicle ?? "",
+    thirdPartyVehicleColour: scenario.thirdPartyVehicleColour ?? "",
+    thirdPartyVehicleVin: scenario.thirdPartyVehicleVin ?? "",
+    thirdPartyEngineNumber: deriveEngineNumber(scenario.thirdPartyVehicleVin ?? scenario.claimNumber),
+    thirdPartyLicencePlate: scenario.thirdPartyLicencePlate ?? "",
+    thirdPartyInsuranceCompany: scenario.thirdPartyInsuranceCompany ?? "",
+    thirdPartyPolicyNumber: scenario.thirdPartyPolicyNumber ?? "",
+    thirdPartyVersion: scenario.thirdPartyVersion ?? "",
+    heroLogo: "",
+  };
+
+  const { default: rawTemplate } = await import(
+    "../../templates/claim-form-template.html?raw"
+  );
+  const filledHtml = fillClaimTemplate(rawTemplate as string, data);
+
+  const html2pdf = (await import("html2pdf.js")).default as (
+    element?: unknown
+  ) => {
+    from: (el: HTMLElement) => {
+      set: (opts: Record<string, unknown>) => {
+        outputPdf: (type: string) => Promise<Blob>;
+      };
+    };
+  };
+
+  const container = document.createElement("div");
+  container.innerHTML = filledHtml;
+  container.style.position = "absolute";
+  container.style.left = "-9999px";
+  document.body.appendChild(container);
+
+  try {
+    const blob = await html2pdf()
+      .from(container.firstElementChild as HTMLElement)
+      .set({
+        margin: 0,
+        filename: `third-party-claim-form-${scenario.claimNumber ?? "claim"}.pdf`,
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+      })
+      .outputPdf("blob");
+
+    return blob;
+  } finally {
+    document.body.removeChild(container);
   }
-
-  return res.blob();
 }
 
 export async function generateDocumentImage(
