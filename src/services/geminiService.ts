@@ -41,10 +41,15 @@ function buildSystemInstruction(defaults: AppSettings["defaults"]): string {
       "thirdPartyName": "string",
       "thirdPartySurname": "string",
       "thirdPartyVehicle": "string (make and model only)",
+      "thirdPartyVehicleColour": "string (common vehicle colour, e.g. Silver, White, Black, Red)",
       "thirdPartyLicencePlate": "string (South African format)",
       "thirdPartyInsuranceCompany": "string",
       "thirdPartyPolicyNumber": "string",
-      "thirdPartyVersion": "string"
+      "thirdPartyVersion": "string",
+      "accidentReportNumber": "string (police report number - may reference nearest police station)",
+      "accidentDate": "string (e.g. 2024-01-15)",
+      "accidentTime": "string (e.g. 14:30)",
+      "accidentPlace": "string (address or place of accident)"
     }
   `;
 }
@@ -115,7 +120,7 @@ export async function generateInitialScenario(
     | "firstPartyVehicle"
     | "thirdPartyId"
     | "thirdPartyVehicleVin"
-  >;
+  > & Partial<Pick<Scenario, "accidentReportNumber" | "accidentDate" | "accidentTime" | "accidentPlace">>;
   return {
     claimNumber,
     firstPartyName: defaults.firstPartyName,
@@ -147,6 +152,24 @@ export async function refineScenario(
     merged.thirdPartyVehicleVin = generateRandomVIN();
   }
   return merged;
+}
+
+export async function generateClaimFormPdf(
+  scenario: Scenario,
+  settings: AppSettings,
+): Promise<Blob> {
+  const res = await fetch("/api/generate-claim-form-pdf", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ scenario, settings }),
+  });
+
+  if (!res.ok) {
+    const { error } = (await res.json()) as { error: string };
+    throw new Error(`PDF generation failed: ${error}`);
+  }
+
+  return res.blob();
 }
 
 export async function generateDocumentImage(

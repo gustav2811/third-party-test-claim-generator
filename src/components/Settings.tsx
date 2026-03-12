@@ -146,6 +146,28 @@ export function Settings({ settings, onSave, onClose }: Props) {
                       className="w-full rounded-full bg-grey-10 border-none px-6 py-4 text-grey-800 focus:ring-2 focus:ring-green-200 outline-none"
                     />
                   </div>
+                  <div>
+                    <label className="block text-sm font-bold text-grey-600 mb-2">Vehicle Colour</label>
+                    <input
+                      type="text"
+                      name="firstPartyVehicleColour"
+                      value={localSettings.defaults.firstPartyVehicleColour ?? ''}
+                      onChange={handleDefaultChange}
+                      placeholder="e.g. White"
+                      className="w-full rounded-full bg-grey-10 border-none px-6 py-4 text-grey-800 focus:ring-2 focus:ring-green-200 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-grey-600 mb-2">Vehicle Registration No</label>
+                    <input
+                      type="text"
+                      name="firstPartyVehicleRegistration"
+                      value={localSettings.defaults.firstPartyVehicleRegistration ?? ''}
+                      onChange={handleDefaultChange}
+                      placeholder="e.g. CA 123-456 GP"
+                      className="w-full rounded-full bg-grey-10 border-none px-6 py-4 text-grey-800 focus:ring-2 focus:ring-green-200 outline-none"
+                    />
+                  </div>
                 </div>
               </section>
 

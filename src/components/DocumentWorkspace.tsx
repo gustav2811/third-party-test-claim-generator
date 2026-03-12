@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { ClaimType, INSURED_DOCS, UNINSURED_DOCS, Scenario } from '../types';
+import { ClaimType, INSURED_DOCS, UNINSURED_DOCS, Scenario, AppSettings } from '../types';
 import { DocumentItem } from './DocumentItem';
 
-export function DocumentWorkspace({ scenario }: { scenario: Scenario }) {
+export function DocumentWorkspace({ scenario, settings }: { scenario: Scenario; settings: AppSettings }) {
   const [activeTab, setActiveTab] = useState<ClaimType>('insured');
 
   const docs = activeTab === 'insured' ? INSURED_DOCS : UNINSURED_DOCS;
@@ -36,7 +36,7 @@ export function DocumentWorkspace({ scenario }: { scenario: Scenario }) {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {docs.map(doc => (
-          <DocumentItem key={doc.id} requirement={doc} scenario={scenario} />
+          <DocumentItem key={doc.id} requirement={doc} scenario={scenario} settings={settings} />
         ))}
       </div>
     </div>

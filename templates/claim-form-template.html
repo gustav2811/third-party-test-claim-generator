@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Third party claim form</title>
+  <style>
+    :root {
+      --green:   #3FC37B;
+      --dark:    #17171B;
+      --text:    #231F20;
+      --muted:   #5C5C5C;
+      --card:    #EFEFF1;
+      --border:  #D4D4D7;
+      --page:    #DADADD;
+    }
+
+    @page { size: A4; margin: 0; }
+
+    * { box-sizing: border-box; }
+
+    html { background: var(--page); }
+
+    body {
+      margin: 0;
+      font-family: "Avenir Next", Avenir, "Helvetica Neue", Arial, Helvetica, sans-serif;
+      font-size: 11pt;
+      color: var(--text);
+      background: var(--page);
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    /* ── Page shell ── */
+    .page {
+      padding: 0 22px 52px;
+    }
+
+    /* ── Hero band ── */
+    .hero {
+      position: relative;
+      overflow: hidden;
+      margin: 0 -22px 20px;
+      padding: 22px 22px 20px;
+      background: var(--green);
+      border-radius: 0 0 36px 36px;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      right: -14px;
+      bottom: -20px;
+      width: 90px;
+      height: 90px;
+      border-radius: 28px 0 0 0;
+      background: rgba(255,255,255,0.18);
+    }
+
+    .brand-row {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      margin-bottom: 16px;
+    }
+
+    .hero-logo {
+      width: 30px;
+      height: 30px;
+      border-radius: 7px;
+      display: block;
+      flex: none;
+    }
+
+    .brand-copy {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .hero h1 {
+      position: relative;
+      z-index: 1;
+      margin: 0 0 6px;
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.05;
+      color: var(--text);
+    }
+
+    .hero-sub {
+      position: relative;
+      z-index: 1;
+      margin: 0;
+      font-size: 12px;
+      color: rgba(35,31,32,0.75);
+    }
+
+    /* ── Section header ── */
+    .section-header {
+      margin: 20px 0 0;
+      padding: 8px 14px;
+      background: var(--green);
+      color: var(--text);
+      font-size: 11pt;
+      font-weight: 800;
+      border-radius: 12px 12px 0 0;
+    }
+
+    /* ── Form table ── */
+    .form-table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid var(--border);
+      border-top: none;
+      margin-bottom: 0;
+      background: var(--card);
+      border-radius: 0 0 12px 12px;
+      overflow: hidden;
+    }
+
+    .form-table td {
+      border: 1px solid var(--border);
+      padding: 7pt 10pt;
+      vertical-align: top;
+      font-size: 10pt;
+    }
+
+    .form-table .label {
+      background: #E8E8EB;
+      width: 36%;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .form-table .value {
+      background: var(--card);
+      color: var(--text);
+    }
+
+    /* ── Opening details table (no header above it) ── */
+    .details-table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid var(--border);
+      margin-bottom: 0;
+      background: var(--card);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .details-table td {
+      border: 1px solid var(--border);
+      padding: 7pt 10pt;
+      vertical-align: top;
+      font-size: 10pt;
+    }
+
+    .details-table .label {
+      background: #E8E8EB;
+      width: 36%;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .details-table .value {
+      background: var(--card);
+      color: var(--text);
+    }
+
+    /* ── Textarea-style block ── */
+    .text-block {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-top: none;
+      padding: 10pt;
+      font-size: 10pt;
+      line-height: 1.55;
+      min-height: 72pt;
+      border-radius: 0 0 12px 12px;
+      white-space: pre-wrap;
+      color: var(--text);
+    }
+
+    .example {
+      font-size: 8pt;
+      color: var(--muted);
+      margin-top: 2pt;
+    }
+
+    /* ── Page break ── */
+    .page-break { page-break-after: always; }
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <!-- Hero -->
+    <div class="hero">
+      <div class="brand-row">
+        {{heroLogo}}
+        <span class="brand-copy">Naked Insurance</span>
+      </div>
+      <h1><span style="color:#17171B;">Third party</span> claim form</h1>
+      <p class="hero-sub">Claim {{claimNumber}}</p>
+    </div>
+
+    <!-- General claim details -->
+    <table class="details-table">
+      <tr><td class="label">Naked claim number</td><td class="value">{{claimNumber}}</td></tr>
+      <tr><td class="label">Incident date &amp; time</td><td class="value">{{accidentDate}} {{accidentTime}}</td></tr>
+      <tr><td class="label">Incident location</td><td class="value">{{accidentPlace}}</td></tr>
+      <tr><td class="label">Accident report number</td><td class="value">{{accidentReportNumber}}</td></tr>
+    </table>
+
+    <!-- Naked client's details -->
+    <h2 class="section-header">Naked client's details</h2>
+    <table class="form-table">
+      <tr><td class="label">Name &amp; Surname</td><td class="value">{{firstPartyName}} {{firstPartySurname}}</td></tr>
+      <tr><td class="label">ID number</td><td class="value">{{firstPartyId}}</td></tr>
+      <tr><td class="label">Vehicle make &amp; model</td><td class="value">{{firstPartyVehicle}}</td></tr>
+      <tr><td class="label">Vehicle colour</td><td class="value">{{firstPartyVehicleColour}}</td></tr>
+      <tr><td class="label">Vehicle registration</td><td class="value">{{firstPartyVehicleRegistration}}</td></tr>
+    </table>
+
+    <!-- Third-party driver -->
+    <h2 class="section-header">Third-party driver</h2>
+    <table class="form-table">
+      <tr><td class="label">Name &amp; Surname</td><td class="value">{{thirdPartyName}} {{thirdPartySurname}}</td></tr>
+      <tr><td class="label">ID number</td><td class="value">{{thirdPartyId}}</td></tr>
+      <tr><td class="label">Contact number</td><td class="value">{{thirdPartyContactNumber}}</td></tr>
+      <tr><td class="label">Email address</td><td class="value">{{thirdPartyEmail}}</td></tr>
+      <tr><td class="label">Insurance (Y/N)</td><td class="value">{{thirdPartyInsured}}</td></tr>
+      <tr><td class="label">Insurer</td><td class="value">{{thirdPartyInsuranceCompany}}</td></tr>
+      <tr><td class="label">Insurance claim number</td><td class="value">{{thirdPartyPolicyNumber}}</td></tr>
+    </table>
+
+    <div class="page-break"></div>
+
+    <!-- Third-party contact person -->
+    <h2 class="section-header">Third-party contact person</h2>
+    <table class="form-table">
+      <tr><td class="label">Name &amp; Surname</td><td class="value">{{thirdPartyContactPerson}}</td></tr>
+      <tr><td class="label">ID number</td><td class="value">{{thirdPartyId}}</td></tr>
+      <tr><td class="label">Contact number</td><td class="value">{{thirdPartyContactNumber}}</td></tr>
+      <tr><td class="label">Email address</td><td class="value">{{thirdPartyEmail}}</td></tr>
+    </table>
+
+    <!-- Third-party vehicle details -->
+    <h2 class="section-header">Third-party vehicle details</h2>
+    <table class="form-table">
+      <tr>
+        <td class="label">Vehicle year, make &amp; model<br><span class="example">(Example: 2014 VW Polo 1.0 TSI Trendline)</span></td>
+        <td class="value">{{thirdPartyVehicle}}</td>
+      </tr>
+      <tr><td class="label">Vehicle colour</td><td class="value">{{thirdPartyVehicleColour}}</td></tr>
+      <tr><td class="label">Vehicle registration number</td><td class="value">{{thirdPartyLicencePlate}}</td></tr>
+      <tr><td class="label">VIN number</td><td class="value">{{thirdPartyVehicleVin}}</td></tr>
+      <tr><td class="label">Engine number</td><td class="value">{{thirdPartyEngineNumber}}</td></tr>
+    </table>
+
+    <!-- Incident description -->
+    <h2 class="section-header">Incident description</h2>
+    <div class="text-block">{{thirdPartyVersion}}</div>
+
+    <div class="page-break"></div>
+
+    <!-- Witness contact person -->
+    <h2 class="section-header">Witness contact person (if applicable)</h2>
+    <table class="form-table">
+      <tr><td class="label">Name &amp; Surname</td><td class="value">{{witnesses}}</td></tr>
+      <tr><td class="label">ID number</td><td class="value"></td></tr>
+      <tr><td class="label">Contact number</td><td class="value"></td></tr>
+      <tr><td class="label">Email address</td><td class="value"></td></tr>
+    </table>
+
+    <!-- Witness incident description -->
+    <h2 class="section-header">Witness incident description (if applicable)</h2>
+    <div class="text-block"></div>
+
+  </div>
+</body>
+</html>

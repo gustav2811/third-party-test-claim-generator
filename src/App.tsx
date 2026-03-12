@@ -234,7 +234,7 @@ export default function App() {
           {/* Section 3: Document Workspace */}
           {scenarioApproved && scenario && (
             <section className="animate-fade-in-from-bottom">
-              <DocumentWorkspace scenario={scenario} />
+              <DocumentWorkspace scenario={scenario} settings={settings} />
             </section>
           )}
         </main>

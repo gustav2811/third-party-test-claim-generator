@@ -1,21 +1,24 @@
 import React, { useState } from 'react';
-import { DocumentRequirement, Scenario } from '../types';
-import { generateDocumentImage } from '../services/geminiService';
-import { Loader2, Download, MessageSquare, X } from 'lucide-react';
+import { DocumentRequirement, Scenario, AppSettings } from '../types';
+import { generateDocumentImage, generateClaimFormPdf } from '../services/geminiService';
+import { Loader2, Download, MessageSquare, X, FileDown } from 'lucide-react';
 
 interface Props {
   key?: React.Key;
   requirement: DocumentRequirement;
   scenario: Scenario;
+  settings: AppSettings;
 }
 
-export function DocumentItem({ requirement, scenario }: Props) {
+export function DocumentItem({ requirement, scenario, settings }: Props) {
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const [generatedPdfUrl, setGeneratedPdfUrl] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showGuidance, setShowGuidance] = useState(false);
   const [documentGuidance, setDocumentGuidance] = useState('');
 
+  const isClaimForm = requirement.id === 'claim_form';
   const requirementWithGuidance: DocumentRequirement = {
     ...requirement,
     ...(documentGuidance.trim() ? { documentGuidelines: documentGuidance.trim() } : {}),
@@ -25,11 +28,17 @@ export function DocumentItem({ requirement, scenario }: Props) {
     setIsGenerating(true);
     setError(null);
     try {
-      const result = await generateDocumentImage(scenario, requirementWithGuidance);
-      setGeneratedImage(result);
-    } catch (err: any) {
-      console.error(err);
-      setError(err.message || 'Failed to generate document');
+      if (isClaimForm) {
+        const blob = await generateClaimFormPdf(scenario, settings);
+        const url = URL.createObjectURL(blob);
+        setGeneratedPdfUrl(url);
+      } else {
+        const result = await generateDocumentImage(scenario, requirementWithGuidance);
+        setGeneratedImage(result);
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to generate document';
+      setError(msg);
     } finally {
       setIsGenerating(false);
     }
@@ -96,6 +105,31 @@ export function DocumentItem({ requirement, scenario }: Props) {
               <img src={generatedImage} alt="Generated Document" className="max-h-64 object-contain rounded-xl shadow-sm" />
             </div>
           </div>
+        ) : generatedPdfUrl ? (
+          <div className="rounded-2xl overflow-hidden bg-grey-10 border border-grey-50">
+            <div className="p-3 bg-white border-b border-grey-50 flex justify-between items-center">
+              <span className="text-sm font-bold text-grey-600">Generated PDF</span>
+              <a
+                href={generatedPdfUrl}
+                download={`third-party-claim-form-${scenario.claimNumber}.pdf`}
+                className="text-grey-800 hover:text-green-400 p-2 bg-grey-10 rounded-full transition-colors"
+                title="Download PDF"
+              >
+                <Download className="w-5 h-5" />
+              </a>
+            </div>
+            <div className="p-4 flex justify-center bg-grey-10">
+              <a
+                href={generatedPdfUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-grey-800 hover:text-green-400 font-bold text-sm"
+              >
+                <FileDown className="w-5 h-5" />
+                Open PDF in new tab
+              </a>
+            </div>
+          </div>
         ) : (
           <button
             onClick={handleGenerate}
@@ -107,6 +141,8 @@ export function DocumentItem({ requirement, scenario }: Props) {
                 <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                 Generating...
               </>
+            ) : isClaimForm ? (
+              'Generate PDF'
             ) : (
               'Generate Document'
             )}
