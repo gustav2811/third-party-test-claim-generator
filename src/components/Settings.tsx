@@ -173,15 +173,110 @@ export function Settings({ settings, onSave, onClose }: Props) {
 
               <section>
                 <h3 className="text-2xl font-bold text-grey-800 mb-6">Third Party Defaults</h3>
-                <div className="max-w-md">
-                  <label className="block text-sm font-bold text-grey-600 mb-2">Third Party Driver ID</label>
-                  <input
-                    type="text"
-                    name="thirdPartyId"
-                    value={localSettings.defaults.thirdPartyId}
-                    onChange={handleDefaultChange}
-                    className="w-full rounded-full bg-grey-10 border-none px-6 py-4 text-grey-800 focus:ring-2 focus:ring-green-200 outline-none"
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-bold text-grey-600 mb-2">First Name</label>
+                    <input
+                      type="text"
+                      name="thirdPartyName"
+                      value={localSettings.defaults.thirdPartyName}
+                      onChange={handleDefaultChange}
+                      className="w-full rounded-full bg-grey-10 border-none px-6 py-4 text-grey-800 focus:ring-2 focus:ring-green-200 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-grey-600 mb-2">Surname</label>
+                    <input
+                      type="text"
+                      name="thirdPartySurname"
+                      value={localSettings.defaults.thirdPartySurname}
+                      onChange={handleDefaultChange}
+                      className="w-full rounded-full bg-grey-10 border-none px-6 py-4 text-grey-800 focus:ring-2 focus:ring-green-200 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-grey-600 mb-2">Contact Number</label>
+                    <input
+                      type="text"
+                      name="thirdPartyContactNumber"
+                      value={localSettings.defaults.thirdPartyContactNumber}
+                      onChange={handleDefaultChange}
+                      className="w-full rounded-full bg-grey-10 border-none px-6 py-4 text-grey-800 focus:ring-2 focus:ring-green-200 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-grey-600 mb-2">Email</label>
+                    <input
+                      type="email"
+                      name="thirdPartyEmail"
+                      value={localSettings.defaults.thirdPartyEmail}
+                      onChange={handleDefaultChange}
+                      className="w-full rounded-full bg-grey-10 border-none px-6 py-4 text-grey-800 focus:ring-2 focus:ring-green-200 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-grey-600 mb-2">Driver ID</label>
+                    <input
+                      type="text"
+                      name="thirdPartyId"
+                      value={localSettings.defaults.thirdPartyId}
+                      onChange={handleDefaultChange}
+                      className="w-full rounded-full bg-grey-10 border-none px-6 py-4 text-grey-800 focus:ring-2 focus:ring-green-200 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-grey-600 mb-2">Vehicle</label>
+                    <input
+                      type="text"
+                      name="thirdPartyVehicle"
+                      value={localSettings.defaults.thirdPartyVehicle}
+                      onChange={handleDefaultChange}
+                      placeholder="e.g. Red Suzuki Swift 2023"
+                      className="w-full rounded-full bg-grey-10 border-none px-6 py-4 text-grey-800 focus:ring-2 focus:ring-green-200 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-grey-600 mb-2">Number Plate</label>
+                    <input
+                      type="text"
+                      name="thirdPartyLicencePlate"
+                      value={localSettings.defaults.thirdPartyLicencePlate}
+                      onChange={handleDefaultChange}
+                      placeholder="e.g. CPT123WC"
+                      className="w-full rounded-full bg-grey-10 border-none px-6 py-4 text-grey-800 focus:ring-2 focus:ring-green-200 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-grey-600 mb-2">VIN</label>
+                    <input
+                      type="text"
+                      name="thirdPartyVehicleVin"
+                      value={localSettings.defaults.thirdPartyVehicleVin}
+                      onChange={handleDefaultChange}
+                      className="w-full rounded-full bg-grey-10 border-none px-6 py-4 text-grey-800 focus:ring-2 focus:ring-green-200 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-grey-600 mb-2">Engine Number</label>
+                    <input
+                      type="text"
+                      name="thirdPartyEngineNumber"
+                      value={localSettings.defaults.thirdPartyEngineNumber}
+                      onChange={handleDefaultChange}
+                      className="w-full rounded-full bg-grey-10 border-none px-6 py-4 text-grey-800 focus:ring-2 focus:ring-green-200 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-grey-600 mb-2">Insurer</label>
+                    <input
+                      type="text"
+                      name="thirdPartyInsuranceCompany"
+                      value={localSettings.defaults.thirdPartyInsuranceCompany}
+                      onChange={handleDefaultChange}
+                      placeholder="e.g. Discovery"
+                      className="w-full rounded-full bg-grey-10 border-none px-6 py-4 text-grey-800 focus:ring-2 focus:ring-green-200 outline-none"
+                    />
+                  </div>
                 </div>
               </section>
             </div>

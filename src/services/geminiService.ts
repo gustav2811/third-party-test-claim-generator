@@ -21,7 +21,9 @@ function buildSystemInstruction(defaults: AppSettings["defaults"]): string {
     Context:
     - First Party: ${defaults.firstPartyName} ${defaults.firstPartySurname} (ID: ${defaults.firstPartyId})
     - First Party Vehicle: ${defaults.firstPartyVehicle}
-    - Third Party ID Number to use: ${defaults.thirdPartyId}
+    - Third Party: ${defaults.thirdPartyName} ${defaults.thirdPartySurname} (ID: ${defaults.thirdPartyId}, Contact: ${defaults.thirdPartyContactNumber}, Email: ${defaults.thirdPartyEmail})
+    - Third Party Vehicle: ${defaults.thirdPartyVehicle}, Plate: ${defaults.thirdPartyLicencePlate}, VIN: ${defaults.thirdPartyVehicleVin}, Engine: ${defaults.thirdPartyEngineNumber}
+    - Third Party Insurer: ${defaults.thirdPartyInsuranceCompany}
     
     Rules:
     - The third party must NEVER be fully at fault (there is always a liability claim against our driver).
@@ -49,8 +51,10 @@ function buildSystemInstruction(defaults: AppSettings["defaults"]): string {
       "accidentReportNumber": "string (police report number - may reference nearest police station)",
       "accidentDate": "string (e.g. 2024-01-15)",
       "accidentTime": "string (e.g. 14:30)",
-      "accidentPlace": "string (address or place of accident)"
+      "accidentPlace": "string (address or place of accident)",
+      "assessmentAmount": number (realistic repair cost in ZAR for the third party vehicle damage, e.g. 25000 to 85000 for typical panel/repair work; single number, no decimals or use 2 decimals)
     }
+    Costing rule: The final costing report (FRC) will be computed as 10% above assessmentAmount. Use assessmentAmount for consistent costing across all documents.
   `;
 }
 
@@ -120,16 +124,37 @@ export async function generateInitialScenario(
     | "firstPartyVehicle"
     | "thirdPartyId"
     | "thirdPartyVehicleVin"
-  > & Partial<Pick<Scenario, "accidentReportNumber" | "accidentDate" | "accidentTime" | "accidentPlace">>;
+    | "finalCostingReportAmount"
+  > & Partial<Pick<Scenario, "accidentReportNumber" | "accidentDate" | "accidentTime" | "accidentPlace" | "assessmentAmount" | "quote1Amount" | "quote2Amount" | "quote3Amount">>;
+
+  const assessmentAmount = typeof data.assessmentAmount === "number" ? data.assessmentAmount : undefined;
+  const finalCostingReportAmount =
+    assessmentAmount != null
+      ? Math.round(assessmentAmount * 1.1 * 100) / 100
+      : undefined;
+  const baseQuote = assessmentAmount ?? 0;
+
   return {
+    ...data,
     claimNumber,
     firstPartyName: defaults.firstPartyName,
     firstPartySurname: defaults.firstPartySurname,
     firstPartyId: defaults.firstPartyId,
     firstPartyVehicle: defaults.firstPartyVehicle,
     thirdPartyId: defaults.thirdPartyId,
-    thirdPartyVehicleVin: generateRandomVIN(),
-    ...data,
+    thirdPartyName: defaults.thirdPartyName,
+    thirdPartySurname: defaults.thirdPartySurname,
+    thirdPartyVehicle: defaults.thirdPartyVehicle,
+    thirdPartyLicencePlate: defaults.thirdPartyLicencePlate,
+    thirdPartyVehicleVin: defaults.thirdPartyVehicleVin || generateRandomVIN(),
+    thirdPartyInsuranceCompany: defaults.thirdPartyInsuranceCompany,
+    thirdPartyPolicyNumber: data.thirdPartyPolicyNumber ?? "",
+    thirdPartyVersion: data.thirdPartyVersion ?? "",
+    assessmentAmount,
+    finalCostingReportAmount,
+    quote1Amount: typeof data.quote1Amount === "number" ? data.quote1Amount : baseQuote || undefined,
+    quote2Amount: typeof data.quote2Amount === "number" ? data.quote2Amount : baseQuote || undefined,
+    quote3Amount: typeof data.quote3Amount === "number" ? data.quote3Amount : baseQuote || undefined,
   };
 }
 
@@ -150,6 +175,10 @@ export async function refineScenario(
   };
   if (data.thirdPartyVehicleVin !== undefined) {
     merged.thirdPartyVehicleVin = generateRandomVIN();
+  }
+  const assessment = merged.assessmentAmount ?? scenario.assessmentAmount;
+  if (typeof assessment === "number") {
+    merged.finalCostingReportAmount = Math.round(assessment * 1.1 * 100) / 100;
   }
   return merged;
 }
