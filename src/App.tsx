@@ -22,7 +22,11 @@ export default function App() {
   
   const [settings, setSettings] = useState<AppSettings>(() => {
     const saved = localStorage.getItem('appSettings');
-    return saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
+    if (!saved) return DEFAULT_SETTINGS;
+    const parsed = JSON.parse(saved) as Partial<AppSettings>;
+    return {
+      defaults: { ...DEFAULT_SETTINGS.defaults, ...parsed.defaults },
+    };
   });
 
   useEffect(() => {

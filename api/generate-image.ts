@@ -18,6 +18,11 @@ interface Scenario {
   thirdPartyPolicyNumber: string;
   thirdPartyId: string;
   thirdPartyVersion: string;
+  assessmentAmount?: number;
+  finalCostingReportAmount?: number;
+  quote1Amount?: number;
+  quote2Amount?: number;
+  quote3Amount?: number;
 }
 
 interface DocumentRequirement {
@@ -51,6 +56,8 @@ export const DOCUMENT_PROMPTS: Record<string, string> = {
     "Realistic photo of vehicle damage to the THIRD PARTY'S vehicle, given the accident scenario.",
   assessment_report:
     "Insurer's assessment report for the third party's vehicle. Use the third party's vehicle make/model and realistic South African repair costs, based on damage incurred by such an accident.",
+  final_costing_report:
+    "Insurer's final costing report for the third party's vehicle. Use the third party's vehicle make/model and realistic South African repair costs, based on damage incurred by such an accident. The final total must be exactly 10% above the assessment amount.",
   quote_1:
     "Panel beater's quote for the third party's vehicle. Realistic format; include labour and parts, based on damage incurred by such an accident.",
   quote_2:
@@ -110,6 +117,31 @@ function buildThirdPartyOnlyContext(scenario: Scenario): string {
 All document details must relate only to this third party; do not include first party or claim context unless the document type requires it.`;
 }
 
+/** Costing instruction so assessment, FRC, and quotes use the same amounts. FRC = 10% above assessment. */
+function buildCostingInstruction(requirementId: string, scenario: Scenario): string {
+  const a = scenario.assessmentAmount;
+  const frc = scenario.finalCostingReportAmount;
+  const q1 = scenario.quote1Amount;
+  const q2 = scenario.quote2Amount;
+  const q3 = scenario.quote3Amount;
+  if (requirementId === "assessment_report" && typeof a === "number") {
+    return ` The total repair cost on this document must be exactly R ${a.toLocaleString("en-ZA")} (use this exact amount for the assessment total).`;
+  }
+  if (requirementId === "final_costing_report" && typeof frc === "number") {
+    return ` The total repair cost on this document must be exactly R ${frc.toLocaleString("en-ZA")} (final costing report is 10% above assessment; use this exact total).`;
+  }
+  if (requirementId === "quote_1" && typeof q1 === "number") {
+    return ` The total quote amount must be exactly R ${q1.toLocaleString("en-ZA")}.`;
+  }
+  if (requirementId === "quote_2" && typeof q2 === "number") {
+    return ` The total quote amount must be exactly R ${q2.toLocaleString("en-ZA")}.`;
+  }
+  if (requirementId === "quote_3" && typeof q3 === "number") {
+    return ` The total quote amount must be exactly R ${q3.toLocaleString("en-ZA")}.`;
+  }
+  return "";
+}
+
 interface GenerateImageRequestBody {
   scenario: Scenario;
   requirement: DocumentRequirement;
@@ -118,7 +150,7 @@ interface GenerateImageRequestBody {
 
 export default async function handler(
   req: VercelRequest,
-  res: VercelResponse,
+  res: VercelResponse
 ): Promise<void> {
   if (req.method !== "POST") {
     res.status(405).json({ error: "Method not allowed" });
@@ -149,10 +181,12 @@ export default async function handler(
     const scenarioContext = useDamagePhotoContext
       ? buildDamagePhotoContext(scenario)
       : useFullScenario
-        ? buildFullScenarioContext(scenario)
-        : buildThirdPartyOnlyContext(scenario);
+      ? buildFullScenarioContext(scenario)
+      : buildThirdPartyOnlyContext(scenario);
 
-    const documentSpecificPrompt = DOCUMENT_PROMPTS[requirement.id] ?? "";
+    const documentSpecificPrompt =
+      (DOCUMENT_PROMPTS[requirement.id] ?? "") +
+      buildCostingInstruction(requirement.id, scenario);
 
     let prompt = "";
 
@@ -169,9 +203,17 @@ export default async function handler(
       Photo to Generate:
       - Title: ${requirement.title}
       - Description: ${requirement.description}
-      ${documentSpecificPrompt ? `- Photo-specific instructions: ${documentSpecificPrompt}` : ""}
+      ${
+        documentSpecificPrompt
+          ? `- Photo-specific instructions: ${documentSpecificPrompt}`
+          : ""
+      }
 
-      ${requirement.documentGuidelines ? `Additional User Information:\n      ${requirement.documentGuidelines}` : ""}
+      ${
+        requirement.documentGuidelines
+          ? `Additional User Information:\n      ${requirement.documentGuidelines}`
+          : ""
+      }
 
       ${
         exampleBase64
@@ -194,9 +236,17 @@ export default async function handler(
       Document to Generate:
       - Title: ${requirement.title}
       - Description: ${requirement.description}
-      ${documentSpecificPrompt ? `- Document-specific instructions: ${documentSpecificPrompt}` : ""}
+      ${
+        documentSpecificPrompt
+          ? `- Document-specific instructions: ${documentSpecificPrompt}`
+          : ""
+      }
 
-      ${requirement.documentGuidelines ? `Additional User Information:\n      ${requirement.documentGuidelines}` : ""}
+      ${
+        requirement.documentGuidelines
+          ? `Additional User Information:\n      ${requirement.documentGuidelines}`
+          : ""
+      }
 
       ${
         exampleBase64
