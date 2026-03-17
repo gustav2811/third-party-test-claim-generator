@@ -111,7 +111,7 @@ export function DocumentItem({ requirement, scenario, settings }: Props) {
               <span className="text-sm font-bold text-grey-600">Generated PDF</span>
               <a
                 href={generatedPdfUrl}
-                download={`third-party-claim-form-${scenario.claimNumber}.pdf`}
+                download={`${scenario.claimNumber ?? "claim"}_third_party_claim_form.pdf`}
                 className="text-grey-800 hover:text-green-400 p-2 bg-grey-10 rounded-full transition-colors"
                 title="Download PDF"
               >

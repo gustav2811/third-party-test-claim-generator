@@ -241,6 +241,24 @@ export async function generateClaimFormPdf(
   );
   const filledHtml = fillClaimTemplate(rawTemplate as string, data);
 
+  // Extract <style> and <body> from the full HTML document string so that
+  // the CSS is actually applied before html2canvas captures the element.
+  const styleMatch = filledHtml.match(/<style[^>]*>([\s\S]*?)<\/style>/i);
+  const bodyMatch = filledHtml.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+  const styleContent = styleMatch?.[1] ?? "";
+  const bodyContent = bodyMatch?.[1] ?? filledHtml;
+
+  const styleEl = document.createElement("style");
+  styleEl.textContent = styleContent;
+  document.head.appendChild(styleEl);
+
+  // A4 width in pixels at 96 dpi ≈ 794px; set explicitly so layout matches the template.
+  const container = document.createElement("div");
+  container.innerHTML = bodyContent;
+  container.style.cssText =
+    "position:absolute;left:-99999px;width:794px;background:#dadadd;";
+  document.body.appendChild(container);
+
   const html2pdf = (await import("html2pdf.js")).default as (
     element?: unknown
   ) => {
@@ -251,20 +269,14 @@ export async function generateClaimFormPdf(
     };
   };
 
-  const container = document.createElement("div");
-  container.innerHTML = filledHtml;
-  container.style.position = "absolute";
-  container.style.left = "-9999px";
-  document.body.appendChild(container);
-
   try {
     const blob = await html2pdf()
       .from(container.firstElementChild as HTMLElement)
       .set({
         margin: 0,
-        filename: `third-party-claim-form-${scenario.claimNumber ?? "claim"}.pdf`,
+        filename: `${scenario.claimNumber ?? "claim"}_third_party_claim_form.pdf`,
         image: { type: "jpeg", quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false },
+        html2canvas: { scale: 2, useCORS: true, logging: false, windowWidth: 794 },
         jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
       })
       .outputPdf("blob");
@@ -272,6 +284,7 @@ export async function generateClaimFormPdf(
     return blob;
   } finally {
     document.body.removeChild(container);
+    document.head.removeChild(styleEl);
   }
 }
 
