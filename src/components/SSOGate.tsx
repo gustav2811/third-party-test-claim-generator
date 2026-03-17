@@ -30,6 +30,10 @@ export function SSOGate({ children }: { children: React.ReactNode }) {
     }
   }, [isReady, user, hasClientId, hasDomain]);
 
+  if (import.meta.env.DEV) {
+    return <>{children}</>;
+  }
+
   if (!configLoaded) {
     return (
       <>
