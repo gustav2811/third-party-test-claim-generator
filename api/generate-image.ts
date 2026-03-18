@@ -18,6 +18,10 @@ interface Scenario {
   thirdPartyPolicyNumber: string;
   thirdPartyId: string;
   thirdPartyVersion: string;
+  accidentReportNumber?: string;
+  accidentDate?: string;
+  accidentTime?: string;
+  accidentPlace?: string;
   assessmentAmount?: number;
   finalCostingReportAmount?: number;
   quote1Amount?: number;
@@ -47,7 +51,7 @@ export const DOCUMENT_PROMPTS: Record<string, string> = {
   claim_form:
     "Include all claim form fields; ensure our driver (first party) and the third party are both clearly identified. Use South African claim form conventions.",
   letter_of_demand:
-    "Formal letter from the third party's insurance company demanding liability from our insured driver. South African legal tone.",
+    "Formal letter from the third party's insurance company demanding liability from our insured driver. South African legal tone. You must include the exact addressee, sender block, claim handler details, and our reference as specified in the fixed format below.",
   damage_photo_1:
     "Realistic photo of vehicle damage to the THIRD PARTY'S vehicle, given the accident scenario. Close up shot (1m away) of the main damage area.",
   damage_photo_2:
@@ -75,9 +79,13 @@ export const DOCUMENT_PROMPTS: Record<string, string> = {
 };
 
 function buildFullScenarioContext(scenario: Scenario): string {
+  const lossDateLine =
+    scenario.accidentDate ?? scenario.accidentTime ?? scenario.accidentPlace
+      ? `- Loss date / accident: ${[scenario.accidentDate, scenario.accidentTime].filter(Boolean).join(" ")}${scenario.accidentPlace ? ` at ${scenario.accidentPlace}` : ""}`
+      : "";
   return `
 - Claim Number: ${scenario.claimNumber}
-- First Party (Our Insured Driver):
+${lossDateLine ? lossDateLine + "\n" : ""}- First Party (Our Insured Driver):
   - Name: ${scenario.firstPartyName} ${scenario.firstPartySurname}
   - ID Number: ${scenario.firstPartyId}
   - Vehicle: ${scenario.firstPartyVehicle}
@@ -92,6 +100,37 @@ function buildFullScenarioContext(scenario: Scenario): string {
   - Insurance: ${scenario.thirdPartyInsuranceCompany}, Policy: ${scenario.thirdPartyPolicyNumber}
   - Version of events: ${scenario.thirdPartyVersion}
   - Note: The third party must never be fully at fault (there is always a liability claim against our driver).`;
+}
+
+/** Third party claim handler (fixed persona from the third party insurer). */
+const LOD_CLAIM_HANDLER = {
+  name: "Ilse de Kock",
+  phone: "011 255 9876",
+  emailDomain(insurerName: string): string {
+    const base = "ilse.dekock";
+    const domain = insurerName.toLowerCase().replace(/\s+/g, "").replace(/[^a-z0-9]/g, "");
+    return `${base}@${domain}.co.za`;
+  },
+};
+
+function buildLetterOfDemandFixedBlock(scenario: Scenario): string {
+  const insurer = scenario.thirdPartyInsuranceCompany ?? "Insurer";
+  const policyNumber = scenario.thirdPartyPolicyNumber ?? "POL";
+  const ourReference = `${policyNumber}-${Math.floor(1000 + Math.random() * 9000)}`;
+  const email = LOD_CLAIM_HANDLER.emailDomain(insurer);
+  return `
+LETTER OF DEMAND – FIXED FORMAT (use these values exactly):
+
+- Addressed to: Naked Insurance Liability Department (never to the first party / our insured driver).
+- From: ${insurer} Recoveries
+  Third Party Claim Handler (agent from the third party insurer):
+  - Name: ${LOD_CLAIM_HANDLER.name}
+  - Email: ${email}
+  - Phone: ${LOD_CLAIM_HANDLER.phone}
+- Our reference: ${ourReference}
+  (This is the claim reference: policy number ${policyNumber} plus a 4-digit suffix.)
+
+Use the scenario's loss date (accident date) in the body of the letter where relevant.`;
 }
 
 /** Minimal context for damage photos only: first party vehicle; third party vehicle, licence plate, version of events. */
@@ -186,6 +225,7 @@ export default async function handler(
 
     const documentSpecificPrompt =
       (DOCUMENT_PROMPTS[requirement.id] ?? "") +
+      (requirement.id === "letter_of_demand" ? buildLetterOfDemandFixedBlock(scenario) : "") +
       buildCostingInstruction(requirement.id, scenario);
 
     let prompt = "";

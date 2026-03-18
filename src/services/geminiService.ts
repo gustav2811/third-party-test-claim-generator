@@ -13,10 +13,20 @@ function generateRandomVIN(): string {
   return vin;
 }
 
+/** Returns yesterday's date (YYYY-MM-DD) for use as default loss/accident date. */
+function getReferenceYesterday(): string {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return d.toISOString().slice(0, 10);
+}
+
 function buildSystemInstruction(defaults: AppSettings["defaults"]): string {
+  const referenceYesterday = getReferenceYesterday();
   return `
     You are an expert insurance claims scenario generator for a South African insurance company (Naked Insurance).
     Generate and refine realistic third-party motor vehicle accident scenarios.
+    
+    Loss date (critical): Every scenario MUST include a loss date (the date of the accident). Use this as reference: today's date is one day after ${referenceYesterday}. The loss date must be on or before ${referenceYesterday} (at least one day in the past so claims are easier to process). Always set "accidentDate" to a concrete date in the past, e.g. ${referenceYesterday} or earlier.
     
     Context:
     - First Party: ${defaults.firstPartyName} ${defaults.firstPartySurname} (ID: ${defaults.firstPartyId})
@@ -49,7 +59,7 @@ function buildSystemInstruction(defaults: AppSettings["defaults"]): string {
       "thirdPartyPolicyNumber": "string",
       "thirdPartyVersion": "string",
       "accidentReportNumber": "string (police report number - may reference nearest police station)",
-      "accidentDate": "string (e.g. 2024-01-15)",
+      "accidentDate": "string (loss date; MUST be on or before ${referenceYesterday}, e.g. ${referenceYesterday} or 2024-01-15)",
       "accidentTime": "string (e.g. 14:30)",
       "accidentPlace": "string (address or place of accident)",
       "assessmentAmount": number (realistic repair cost in ZAR for the third party vehicle damage, e.g. 25000 to 85000 for typical panel/repair work; single number, no decimals or use 2 decimals)
@@ -107,7 +117,7 @@ export async function generateInitialScenario(
   guidance?: string,
 ): Promise<Scenario> {
   const prompt = guidance
-    ? `Generate an initial accident scenario for claim number ${claimNumber}. Additional guidance: ${guidance}`
+    ? `Generate an initial accident scenario for claim number ${claimNumber}. Additional guidance: ${guidance}, which overrides information defaulted in the system instruction.`
     : `Generate an initial accident scenario for claim number ${claimNumber}.`;
 
   const response = await chat.sendMessage({ message: prompt });
@@ -125,9 +135,25 @@ export async function generateInitialScenario(
     | "thirdPartyId"
     | "thirdPartyVehicleVin"
     | "finalCostingReportAmount"
-  > & Partial<Pick<Scenario, "accidentReportNumber" | "accidentDate" | "accidentTime" | "accidentPlace" | "assessmentAmount" | "quote1Amount" | "quote2Amount" | "quote3Amount">>;
+  > &
+    Partial<
+      Pick<
+        Scenario,
+        | "accidentReportNumber"
+        | "accidentDate"
+        | "accidentTime"
+        | "accidentPlace"
+        | "assessmentAmount"
+        | "quote1Amount"
+        | "quote2Amount"
+        | "quote3Amount"
+      >
+    >;
 
-  const assessmentAmount = typeof data.assessmentAmount === "number" ? data.assessmentAmount : undefined;
+  const assessmentAmount =
+    typeof data.assessmentAmount === "number"
+      ? data.assessmentAmount
+      : undefined;
   const finalCostingReportAmount =
     assessmentAmount != null
       ? Math.round(assessmentAmount * 1.1 * 100) / 100
@@ -152,9 +178,18 @@ export async function generateInitialScenario(
     thirdPartyVersion: data.thirdPartyVersion ?? "",
     assessmentAmount,
     finalCostingReportAmount,
-    quote1Amount: typeof data.quote1Amount === "number" ? data.quote1Amount : baseQuote || undefined,
-    quote2Amount: typeof data.quote2Amount === "number" ? data.quote2Amount : baseQuote || undefined,
-    quote3Amount: typeof data.quote3Amount === "number" ? data.quote3Amount : baseQuote || undefined,
+    quote1Amount:
+      typeof data.quote1Amount === "number"
+        ? data.quote1Amount
+        : baseQuote || undefined,
+    quote2Amount:
+      typeof data.quote2Amount === "number"
+        ? data.quote2Amount
+        : baseQuote || undefined,
+    quote3Amount:
+      typeof data.quote3Amount === "number"
+        ? data.quote3Amount
+        : baseQuote || undefined,
   };
 }
 
@@ -189,10 +224,7 @@ function deriveEngineNumber(vin: string): string {
   return `ENG${seed.slice(-8).padStart(8, "0")}`;
 }
 
-function fillClaimTemplate(
-  html: string,
-  data: Record<string, string>,
-): string {
+function fillClaimTemplate(html: string, data: Record<string, string>): string {
   return html.replace(/\{\{(\w+)\}\}/g, (_, key) => data[key] ?? "");
 }
 
@@ -203,7 +235,8 @@ export async function generateClaimFormPdf(
   const defaults = settings.defaults;
 
   const thirdPartyEmail = `${(scenario.thirdPartyName ?? "").toLowerCase().replace(/\s+/g, "")}.${(scenario.thirdPartySurname ?? "").toLowerCase().replace(/\s+/g, "")}@yahoo.com`;
-  const thirdPartyContactPerson = `${scenario.thirdPartyName ?? ""} ${scenario.thirdPartySurname ?? ""}`.trim();
+  const thirdPartyContactPerson =
+    `${scenario.thirdPartyName ?? ""} ${scenario.thirdPartySurname ?? ""}`.trim();
 
   const data: Record<string, string> = {
     claimNumber: scenario.claimNumber ?? "",
@@ -228,7 +261,9 @@ export async function generateClaimFormPdf(
     thirdPartyVehicle: scenario.thirdPartyVehicle ?? "",
     thirdPartyVehicleColour: scenario.thirdPartyVehicleColour ?? "",
     thirdPartyVehicleVin: scenario.thirdPartyVehicleVin ?? "",
-    thirdPartyEngineNumber: deriveEngineNumber(scenario.thirdPartyVehicleVin ?? scenario.claimNumber),
+    thirdPartyEngineNumber: deriveEngineNumber(
+      scenario.thirdPartyVehicleVin ?? scenario.claimNumber,
+    ),
     thirdPartyLicencePlate: scenario.thirdPartyLicencePlate ?? "",
     thirdPartyInsuranceCompany: scenario.thirdPartyInsuranceCompany ?? "",
     thirdPartyPolicyNumber: scenario.thirdPartyPolicyNumber ?? "",
@@ -236,9 +271,8 @@ export async function generateClaimFormPdf(
     heroLogo: "",
   };
 
-  const { default: rawTemplate } = await import(
-    "../../templates/claim-form-template.html?raw"
-  );
+  const { default: rawTemplate } =
+    await import("../../templates/claim-form-template.html?raw");
   const filledHtml = fillClaimTemplate(rawTemplate as string, data);
 
   // Extract <style> and <body> from the full HTML document string so that
@@ -260,7 +294,7 @@ export async function generateClaimFormPdf(
   document.body.appendChild(container);
 
   const html2pdf = (await import("html2pdf.js")).default as (
-    element?: unknown
+    element?: unknown,
   ) => {
     from: (el: HTMLElement) => {
       set: (opts: Record<string, unknown>) => {
@@ -276,7 +310,12 @@ export async function generateClaimFormPdf(
         margin: 0,
         filename: `${scenario.claimNumber ?? "claim"}_third_party_claim_form.pdf`,
         image: { type: "jpeg", quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false, windowWidth: 794 },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          windowWidth: 794,
+        },
         jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
       })
       .outputPdf("blob");
