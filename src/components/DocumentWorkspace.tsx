@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ClaimType, INSURED_DOCS, UNINSURED_DOCS, Scenario, AppSettings } from '../types';
+import { ClaimType, INSURED_DOCS, LEGAL_DOCS, UNINSURED_DOCS, Scenario, AppSettings } from '../types';
 import { DocumentItem } from './DocumentItem';
 
 export function DocumentWorkspace({ scenario, settings }: { scenario: Scenario; settings: AppSettings }) {
