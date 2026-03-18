@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { DocumentRequirement, Scenario, AppSettings } from '../types';
 import { generateDocumentImage, generateClaimFormPdf } from '../services/geminiService';
-import { Loader2, Download, MessageSquare, X, FileDown } from 'lucide-react';
+import { Loader2, Download, MessageSquare, X, FileDown, RotateCcw } from 'lucide-react';
 
 interface Props {
   key?: React.Key;
@@ -17,6 +17,7 @@ export function DocumentItem({ requirement, scenario, settings }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [showGuidance, setShowGuidance] = useState(false);
   const [documentGuidance, setDocumentGuidance] = useState('');
+  const [showImageFullScreen, setShowImageFullScreen] = useState(false);
 
   const isClaimForm = requirement.id === 'claim_form';
   const requirementWithGuidance: DocumentRequirement = {
@@ -42,6 +43,15 @@ export function DocumentItem({ requirement, scenario, settings }: Props) {
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const handleClearAndStartAgain = () => {
+    if (generatedImage) setGeneratedImage(null);
+    if (generatedPdfUrl) {
+      URL.revokeObjectURL(generatedPdfUrl);
+      setGeneratedPdfUrl(null);
+    }
+    setError(null);
   };
 
   return (
@@ -89,34 +99,91 @@ export function DocumentItem({ requirement, scenario, settings }: Props) {
         {error && <p className="text-sm text-red-600 bg-red-50 p-3 rounded-xl">{error}</p>}
 
         {generatedImage ? (
-          <div className="rounded-2xl overflow-hidden bg-grey-10 border border-grey-50">
-            <div className="p-3 bg-white border-b border-grey-50 flex justify-between items-center">
-              <span className="text-sm font-bold text-grey-600">Generated Result</span>
-              <a
-                href={generatedImage}
-                download={`${requirement.id}.png`}
-                className="text-grey-800 hover:text-green-400 p-2 bg-grey-10 rounded-full transition-colors"
-                title="Download"
+          <>
+            <div className="rounded-2xl overflow-hidden bg-grey-10 border border-grey-50">
+              <div className="p-3 bg-white border-b border-grey-50 flex justify-between items-center">
+                <span className="text-sm font-bold text-grey-600">Generated Result</span>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={handleClearAndStartAgain}
+                    className="text-grey-600 hover:text-grey-800 p-2 bg-grey-10 rounded-full transition-colors"
+                    title="Clear and start again"
+                  >
+                    <RotateCcw className="w-5 h-5" />
+                  </button>
+                  <a
+                    href={generatedImage}
+                    download={`${requirement.id}.png`}
+                    className="text-grey-800 hover:text-green-400 p-2 bg-grey-10 rounded-full transition-colors"
+                    title="Download"
+                  >
+                    <Download className="w-5 h-5" />
+                  </a>
+                </div>
+              </div>
+              <div className="p-4 flex justify-center bg-grey-10">
+                <button
+                  type="button"
+                  onClick={() => setShowImageFullScreen(true)}
+                  className="block w-full text-left focus:outline-none focus:ring-2 focus:ring-green-200 focus:ring-offset-2 rounded-xl"
+                >
+                  <img
+                    src={generatedImage}
+                    alt="Generated Document"
+                    className="max-h-64 w-full object-contain rounded-xl shadow-sm cursor-zoom-in hover:opacity-95 transition-opacity"
+                  />
+                </button>
+              </div>
+            </div>
+
+            {showImageFullScreen && (
+              <div
+                className="fixed inset-0 z-50 flex items-center justify-center bg-grey-800/90 p-4"
+                role="dialog"
+                aria-modal="true"
+                aria-label="View generated document full size"
+                onClick={() => setShowImageFullScreen(false)}
               >
-                <Download className="w-5 h-5" />
-              </a>
-            </div>
-            <div className="p-4 flex justify-center bg-grey-10">
-              <img src={generatedImage} alt="Generated Document" className="max-h-64 object-contain rounded-xl shadow-sm" />
-            </div>
-          </div>
+                <button
+                  type="button"
+                  onClick={() => setShowImageFullScreen(false)}
+                  className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+                  aria-label="Close full screen view"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+                <img
+                  src={generatedImage}
+                  alt="Generated Document (full size)"
+                  className="max-h-[90vh] max-w-full object-contain rounded-xl shadow-2xl"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
+            )}
+          </>
         ) : generatedPdfUrl ? (
           <div className="rounded-2xl overflow-hidden bg-grey-10 border border-grey-50">
             <div className="p-3 bg-white border-b border-grey-50 flex justify-between items-center">
               <span className="text-sm font-bold text-grey-600">Generated PDF</span>
-              <a
-                href={generatedPdfUrl}
-                download={`${scenario.claimNumber ?? "claim"}_third_party_claim_form.pdf`}
-                className="text-grey-800 hover:text-green-400 p-2 bg-grey-10 rounded-full transition-colors"
-                title="Download PDF"
-              >
-                <Download className="w-5 h-5" />
-              </a>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={handleClearAndStartAgain}
+                  className="text-grey-600 hover:text-grey-800 p-2 bg-grey-10 rounded-full transition-colors"
+                  title="Clear and start again"
+                >
+                  <RotateCcw className="w-5 h-5" />
+                </button>
+                <a
+                  href={generatedPdfUrl}
+                  download={`${scenario.claimNumber ?? "claim"}_third_party_claim_form.pdf`}
+                  className="text-grey-800 hover:text-green-400 p-2 bg-grey-10 rounded-full transition-colors"
+                  title="Download PDF"
+                >
+                  <Download className="w-5 h-5" />
+                </a>
+              </div>
             </div>
             <div className="p-4 flex justify-center bg-grey-10">
               <a
