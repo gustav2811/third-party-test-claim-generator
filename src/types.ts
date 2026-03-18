@@ -96,6 +96,19 @@ export const INSURED_DOCS: DocumentRequirement[] = [
   { id: 'final_costing_report', title: 'Final Costing Report', description: 'Final costing report for the vehicle.' },
 ];
 
+export const LEGAL_DOCS: DocumentRequirement[] = [
+  {
+    id: 'summons',
+    title: 'Summons',
+    description: 'Civil summons document to commence recovery proceedings against the third party. Lay this out like a South African civil summons pack. Include a court heading, case reference details, plaintiff and defendant details, cause of action tied to the motor vehicle accident, an amount claimed placeholder or realistic damages wording, and a signature block for the issuing attorney or registrar. Keep it formal, legal, and document-heavy rather than handwritten.',
+  },
+  {
+    id: 'return_of_service',
+    title: 'Return of Service',
+    description: 'Sheriff return confirming how and when the summons was served. Lay this out like a South African sheriff return of service. Include the court heading, case reference details, the document served, date and time of service, method of service, address served at, recipient details if applicable, and a sheriff signature or stamp area. Keep it formal and administrative.',
+  },
+];
+
 export const UNINSURED_DOCS: DocumentRequirement[] = [
   { id: 'claim_form', title: 'Third Party Claim Form', description: 'Document with all the claim form requirements.' },
   { id: 'quote_1', title: 'Panel Beater Quote 1', description: 'First unique quote.' },
@@ -110,7 +123,7 @@ export const UNINSURED_DOCS: DocumentRequirement[] = [
   { id: 'licence_disc', title: 'Licence Disc', description: 'Licence disc on the vehicle screen, showing the VIN.' },
 ];
 
-export const ALL_DOCS = [...INSURED_DOCS, ...UNINSURED_DOCS];
+export const ALL_DOCS = [...INSURED_DOCS, ...LEGAL_DOCS, ...UNINSURED_DOCS];
 
 declare global {
   interface Window {

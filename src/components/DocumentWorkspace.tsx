@@ -5,7 +5,9 @@ import { DocumentItem } from './DocumentItem';
 export function DocumentWorkspace({ scenario, settings }: { scenario: Scenario; settings: AppSettings }) {
   const [activeTab, setActiveTab] = useState<ClaimType>('insured');
 
-  const docs = activeTab === 'insured' ? INSURED_DOCS : UNINSURED_DOCS;
+  const docs = activeTab === 'insured'
+    ? [...INSURED_DOCS, ...LEGAL_DOCS]
+    : [...UNINSURED_DOCS, ...LEGAL_DOCS];
 
   return (
     <div className="space-y-8">
