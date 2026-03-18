@@ -113,14 +113,29 @@ const LOD_CLAIM_HANDLER = {
   },
 };
 
+/** Current date for letter header (server date). Format: DD.MM.YYYY and "DD Month YYYY" for letter date field. */
+function getLetterDate(): { numeric: string; long: string } {
+  const d = new Date();
+  const day = d.getDate();
+  const month = d.getMonth();
+  const year = d.getFullYear();
+  const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const numeric = `${String(day).padStart(2, "0")}.${String(month + 1).padStart(2, "0")}.${year}`;
+  const long = `${day} ${months[month]} ${year}`;
+  return { numeric, long };
+}
+
 function buildLetterOfDemandFixedBlock(scenario: Scenario): string {
   const insurer = scenario.thirdPartyInsuranceCompany ?? "Insurer";
   const policyNumber = scenario.thirdPartyPolicyNumber ?? "POL";
   const ourReference = `${policyNumber}-${Math.floor(1000 + Math.random() * 9000)}`;
   const email = LOD_CLAIM_HANDLER.emailDomain(insurer);
+  const { numeric: letterDateNumeric, long: letterDateLong } = getLetterDate();
   return `
-LETTER OF DEMAND – FIXED FORMAT (use these values exactly):
+LETTER OF DEMAND – FIXED FORMAT (use these values exactly in the document; do NOT output any instructions or placeholders in the letter text):
 
+- Date (letter date, header): Use exactly this date and nothing else: ${letterDateNumeric} or ${letterDateLong}. Do not use a future date. Do not include any text like "(or a reasonable date...)" in the document.
+- Your reference: Leave blank or use a single dash. Do not write instructions (e.g. "TO BE CONFIRMED") in the document.
 - Addressed to: Naked Insurance Liability Department (never to the first party / our insured driver).
 - From: ${insurer} Recoveries
   Third Party Claim Handler (agent from the third party insurer):
@@ -128,9 +143,8 @@ LETTER OF DEMAND – FIXED FORMAT (use these values exactly):
   - Email: ${email}
   - Phone: ${LOD_CLAIM_HANDLER.phone}
 - Our reference: ${ourReference}
-  (This is the claim reference: policy number ${policyNumber} plus a 4-digit suffix.)
 
-Use the scenario's loss date (accident date) in the body of the letter where relevant.`;
+Use the scenario's loss date (accident date) only in the body of the letter where you describe the incident; the header "Date" must be the letter date above.`;
 }
 
 /** Minimal context for damage photos only: first party vehicle; third party vehicle, licence plate, version of events. */

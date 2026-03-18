@@ -88,7 +88,15 @@ export default function App() {
 
         <main className="px-4 lg:px-12 pb-24 space-y-8 lg:space-y-12">
           {/* Section 1: Input */}
-          <section className="bg-white rounded-4xl lg:rounded-5xl p-8 lg:p-12 shadow-solid animate-fade-in-from-bottom">
+          <section
+            className="bg-white rounded-4xl lg:rounded-5xl p-8 lg:p-12 shadow-solid animate-fade-in-from-bottom"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+                if (claimNumber && !isGeneratingScenario) handleGenerateScenario();
+              }
+            }}
+          >
             <h2 className="text-2xl lg:text-4xl font-black leading-tighter text-grey-800 mb-4">
               Generate a <span className="text-green-200">Scenario</span>
             </h2>

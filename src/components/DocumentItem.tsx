@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DocumentRequirement, Scenario, AppSettings } from '../types';
 import { generateDocumentImage, generateClaimFormPdf } from '../services/geminiService';
 import { Loader2, Download, MessageSquare, X, FileDown, RotateCcw } from 'lucide-react';
@@ -54,8 +54,27 @@ export function DocumentItem({ requirement, scenario, settings }: Props) {
     setError(null);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && !generatedImage && !generatedPdfUrl && !isGenerating) {
+      e.preventDefault();
+      handleGenerate();
+    }
+  };
+
+  useEffect(() => {
+    if (!showImageFullScreen) return;
+    const onEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowImageFullScreen(false);
+    };
+    document.addEventListener('keydown', onEscape);
+    return () => document.removeEventListener('keydown', onEscape);
+  }, [showImageFullScreen]);
+
   return (
-    <div className="bg-white rounded-3xl p-6 lg:p-8 shadow-card flex flex-col h-full transition-all duration-300 hover:shadow-surround">
+    <div
+      className="bg-white rounded-3xl p-6 lg:p-8 shadow-card flex flex-col h-full transition-all duration-300 hover:shadow-surround"
+      onKeyDown={handleKeyDown}
+    >
       <div className="mb-6">
         <h3 className="text-xl font-bold text-grey-800 mb-2">{requirement.title}</h3>
         <p className="text-grey-600 font-extralight tracking-compact leading-6">{requirement.description}</p>
@@ -126,6 +145,7 @@ export function DocumentItem({ requirement, scenario, settings }: Props) {
                 <button
                   type="button"
                   onClick={() => setShowImageFullScreen(true)}
+                  onDoubleClick={() => setShowImageFullScreen(true)}
                   className="block w-full text-left focus:outline-none focus:ring-2 focus:ring-green-200 focus:ring-offset-2 rounded-xl"
                 >
                   <img
