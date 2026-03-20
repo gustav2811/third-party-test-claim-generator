@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { GoogleGenAI } from "@google/genai";
-import { truncateAccidentReportNumber } from "../src/accidentReportNumber";
+import { truncateAccidentReportNumber } from "../lib/accidentReportNumber";
 
 interface Scenario {
   claimNumber: string;

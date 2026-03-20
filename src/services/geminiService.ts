@@ -1,5 +1,5 @@
 import type { Content } from "@google/genai";
-import { truncateAccidentReportNumber } from "../accidentReportNumber";
+import { truncateAccidentReportNumber } from "../../lib/accidentReportNumber";
 import type { DocumentRequirement, Scenario, AppSettings } from "../types";
 import { db } from "./db";
 
