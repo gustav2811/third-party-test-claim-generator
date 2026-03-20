@@ -15,7 +15,7 @@ export interface Scenario {
   thirdPartyPolicyNumber: string;
   thirdPartyId: string;
   thirdPartyVersion: string;
-  /** Accident report number (police report number). */
+  /** Accident report number (police report number); max 20 characters when normalized. */
   accidentReportNumber?: string;
   /** Accident date. */
   accidentDate?: string;

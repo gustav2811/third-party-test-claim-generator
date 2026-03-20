@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { GoogleGenAI } from "@google/genai";
+import { truncateAccidentReportNumber } from "../src/accidentReportNumber";
 
 interface Scenario {
   claimNumber: string;
@@ -226,21 +227,29 @@ export default async function handler(
     return;
   }
 
+  const scenarioForRequest: Scenario = {
+    ...scenario,
+    accidentReportNumber: truncateAccidentReportNumber(
+      scenario.accidentReportNumber,
+    ),
+  };
+
   try {
     const ai = new GoogleGenAI({ apiKey });
 
     const useFullScenario = DOCS_FULL_SCENARIO.has(requirement.id);
     const useDamagePhotoContext = DOCS_DAMAGE_PHOTO.has(requirement.id);
     const scenarioContext = useDamagePhotoContext
-      ? buildDamagePhotoContext(scenario)
+      ? buildDamagePhotoContext(scenarioForRequest)
       : useFullScenario
-      ? buildFullScenarioContext(scenario)
-      : buildThirdPartyOnlyContext(scenario);
+      ? buildFullScenarioContext(scenarioForRequest)
+      : buildThirdPartyOnlyContext(scenarioForRequest);
 
     const documentSpecificPrompt =
       (DOCUMENT_PROMPTS[requirement.id] ?? "") +
-      (requirement.id === "letter_of_demand" ? buildLetterOfDemandFixedBlock(scenario) : "") +
-      buildCostingInstruction(requirement.id, scenario);
+      (requirement.id === "letter_of_demand"
+        ? buildLetterOfDemandFixedBlock(scenarioForRequest)
+        : "") + buildCostingInstruction(requirement.id, scenarioForRequest);
 
     let prompt = "";
 

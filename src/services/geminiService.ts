@@ -1,4 +1,5 @@
 import type { Content } from "@google/genai";
+import { truncateAccidentReportNumber } from "../accidentReportNumber";
 import type { DocumentRequirement, Scenario, AppSettings } from "../types";
 import { db } from "./db";
 
@@ -44,6 +45,7 @@ function buildSystemInstruction(defaults: AppSettings["defaults"]): string {
     - The third party vehicle must be a common, middle-class South African vehicle (for example: Toyota Corolla, VW Polo, Hyundai i20, Ford Fiesta, Renault Kwid, Nissan Almera, Kia Rio, Suzuki Swift).
     - Generate a South African licence plate for the third party vehicle (e.g. CA 123-456 GP or similar provincial format).
     - Generate a realistic South African insurance company name for the third party (e.g. Discovery, Outsurance, King Price, Budget, 1st for Women, Hollard, Auto & General) and a plausible policy number (alphanumeric).
+    - Police / accident report number ("accidentReportNumber"): must be at most 20 characters (count every character); use a short reference or station code plus digits — never exceed 20 characters.
     
     Output Format:
     Always return the scenario as a JSON object matching this schema:
@@ -58,7 +60,7 @@ function buildSystemInstruction(defaults: AppSettings["defaults"]): string {
       "thirdPartyInsuranceCompany": "string",
       "thirdPartyPolicyNumber": "string",
       "thirdPartyVersion": "string",
-      "accidentReportNumber": "string (police report number - may reference nearest police station)",
+      "accidentReportNumber": "string (police report number; MAX 20 characters; may reference nearest police station)",
       "accidentDate": "string (loss date; MUST be on or before ${referenceYesterday}, e.g. ${referenceYesterday} or 2024-01-15)",
       "accidentTime": "string (e.g. 14:30)",
       "accidentPlace": "string (address or place of accident)",
@@ -159,9 +161,13 @@ export async function generateInitialScenario(
       ? Math.round(assessmentAmount * 1.1 * 100) / 100
       : undefined;
   const baseQuote = assessmentAmount ?? 0;
+  const accidentReportNumber = truncateAccidentReportNumber(
+    data.accidentReportNumber,
+  );
 
   return {
     ...data,
+    accidentReportNumber,
     claimNumber,
     firstPartyName: defaults.firstPartyName,
     firstPartySurname: defaults.firstPartySurname,
@@ -208,6 +214,9 @@ export async function refineScenario(
     ...scenario,
     ...data,
   };
+  merged.accidentReportNumber = truncateAccidentReportNumber(
+    merged.accidentReportNumber,
+  );
   if (data.thirdPartyVehicleVin !== undefined) {
     merged.thirdPartyVehicleVin = generateRandomVIN();
   }
@@ -240,7 +249,8 @@ export async function generateClaimFormPdf(
 
   const data: Record<string, string> = {
     claimNumber: scenario.claimNumber ?? "",
-    accidentReportNumber: scenario.accidentReportNumber ?? "",
+    accidentReportNumber:
+      truncateAccidentReportNumber(scenario.accidentReportNumber) ?? "",
     accidentDate: scenario.accidentDate ?? "",
     accidentTime: scenario.accidentTime ?? "",
     accidentPlace: scenario.accidentPlace ?? "",
