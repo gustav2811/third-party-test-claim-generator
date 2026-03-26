@@ -1,13 +1,30 @@
-import React, { useState } from 'react';
-import { ClaimType, INSURED_DOCS, LEGAL_DOCS, UNINSURED_DOCS, Scenario, AppSettings } from '../types';
-import { DocumentItem } from './DocumentItem';
+import React, { useState } from "react";
+import {
+  ClaimType,
+  INSURED_DOCS,
+  LEGAL_DOCS,
+  UNINSURED_DOCS,
+  FIRST_PARTY_DOCS,
+  Scenario,
+  AppSettings,
+} from "../types";
+import { DocumentItem } from "./DocumentItem";
 
-export function DocumentWorkspace({ scenario, settings }: { scenario: Scenario; settings: AppSettings }) {
-  const [activeTab, setActiveTab] = useState<ClaimType>('insured');
+export function DocumentWorkspace({
+  scenario,
+  settings,
+}: {
+  scenario: Scenario;
+  settings: AppSettings;
+}) {
+  const [activeTab, setActiveTab] = useState<ClaimType>("insured");
 
-  const docs = activeTab === 'insured'
-    ? [...INSURED_DOCS, ...LEGAL_DOCS]
-    : [...UNINSURED_DOCS, ...LEGAL_DOCS];
+  const docs =
+    activeTab === "insured"
+      ? [...INSURED_DOCS, ...LEGAL_DOCS]
+      : activeTab === "uninsured"
+      ? [...UNINSURED_DOCS, ...LEGAL_DOCS]
+      : [...FIRST_PARTY_DOCS];
 
   return (
     <div className="space-y-8">
@@ -15,30 +32,49 @@ export function DocumentWorkspace({ scenario, settings }: { scenario: Scenario; 
         <h2 className="text-3xl lg:text-5xl font-black leading-tighter text-grey-800">
           Generate <span className="text-green-200">Documents</span>
         </h2>
-        
-        <div className="flex p-1 bg-white rounded-full shadow-sm self-start sm:self-auto">
+
+        <div className="flex flex-wrap gap-1 p-1 bg-white rounded-full shadow-sm self-start sm:self-auto">
           <button
-            onClick={() => setActiveTab('insured')}
-            className={`px-6 py-3 rounded-full text-sm font-bold transition-all duration-300 ${
-              activeTab === 'insured' ? 'bg-grey-800 text-white shadow-button' : 'text-grey-600 hover:text-grey-800'
+            onClick={() => setActiveTab("insured")}
+            className={`px-5 py-3 rounded-full text-sm font-bold transition-all duration-300 ${
+              activeTab === "insured"
+                ? "bg-grey-800 text-white shadow-button"
+                : "text-grey-600 hover:text-grey-800"
             }`}
           >
             Insured Claim
           </button>
           <button
-            onClick={() => setActiveTab('uninsured')}
-            className={`px-6 py-3 rounded-full text-sm font-bold transition-all duration-300 ${
-              activeTab === 'uninsured' ? 'bg-grey-800 text-white shadow-button' : 'text-grey-600 hover:text-grey-800'
+            onClick={() => setActiveTab("uninsured")}
+            className={`px-5 py-3 rounded-full text-sm font-bold transition-all duration-300 ${
+              activeTab === "uninsured"
+                ? "bg-grey-800 text-white shadow-button"
+                : "text-grey-600 hover:text-grey-800"
             }`}
           >
             Uninsured Claim
+          </button>
+          <button
+            onClick={() => setActiveTab("firstParty")}
+            className={`px-5 py-3 rounded-full text-sm font-bold transition-all duration-300 ${
+              activeTab === "firstParty"
+                ? "bg-grey-800 text-white shadow-button"
+                : "text-grey-600 hover:text-grey-800"
+            }`}
+          >
+            First Party
           </button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {docs.map(doc => (
-          <DocumentItem key={doc.id} requirement={doc} scenario={scenario} settings={settings} />
+        {docs.map((doc) => (
+          <DocumentItem
+            key={doc.id}
+            requirement={doc}
+            scenario={scenario}
+            settings={settings}
+          />
         ))}
       </div>
     </div>

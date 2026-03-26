@@ -45,6 +45,9 @@ const DOCS_DAMAGE_PHOTO = new Set<string>([
   "damage_photo_1",
   "damage_photo_2",
   "damage_photo_3",
+  "first_party_damage_photo_1",
+  "first_party_damage_photo_2",
+  "first_party_damage_photo_3",
 ]);
 
 /** Per-document prompt snippet injected into the generation prompt. Key = requirement.id. */
@@ -77,12 +80,30 @@ export const DOCUMENT_PROMPTS: Record<string, string> = {
     "Short letter or affidavit stating the third party has no insurance claim / no insurance. Based on the insurer and must mention the accident date.",
   licence_disc:
     "South African licence disc for the third party's vehicle. Show VIN and vehicle details; valid-looking disc for windscreen.",
+  proof_of_bank_account:
+    "South African bank proof of account: official letterhead or stamped bank confirmation. Layout like a bank letter confirming account details for claims payment. All banking fields must match the fixed values below exactly.",
+  proof_of_bank_account_insured:
+    "South African bank proof of account for a corporate insurer: account in the third party insurer’s legal name with company registration (CK / registration number) shown. Official letterhead or stamped bank confirmation. All fields must match the fixed values below exactly.",
+  first_party_damage_photo_1:
+    "Realistic photo of vehicle damage to the FIRST PARTY'S vehicle, given the accident scenario. Close up shot (1m away) of the main damage area.",
+  first_party_damage_photo_2:
+    "Realistic photo of vehicle damage to the FIRST PARTY'S vehicle, given the accident scenario. Damage photo should show the entire accident scene based on the scenario.",
+  first_party_damage_photo_3:
+    "Realistic close-up photo of the FIRST PARTY'S vehicle odometer showing the mileage reading (dashboard / instrument cluster). No damage focus — the odometer must be clearly legible.",
+
 };
 
 function buildFullScenarioContext(scenario: Scenario): string {
   const lossDateLine =
     scenario.accidentDate ?? scenario.accidentTime ?? scenario.accidentPlace
-      ? `- Loss date / accident: ${[scenario.accidentDate, scenario.accidentTime].filter(Boolean).join(" ")}${scenario.accidentPlace ? ` at ${scenario.accidentPlace}` : ""}`
+      ? `- Loss date / accident: ${[
+          scenario.accidentDate,
+          scenario.accidentTime,
+        ]
+          .filter(Boolean)
+          .join(" ")}${
+          scenario.accidentPlace ? ` at ${scenario.accidentPlace}` : ""
+        }`
       : "";
   return `
 - Claim Number: ${scenario.claimNumber}
@@ -98,7 +119,9 @@ ${lossDateLine ? lossDateLine + "\n" : ""}- First Party (Our Insured Driver):
   - Vehicle: ${scenario.thirdPartyVehicle}
   - Vehicle VIN: ${scenario.thirdPartyVehicleVin}
   - Licence Plate: ${scenario.thirdPartyLicencePlate}
-  - Insurance: ${scenario.thirdPartyInsuranceCompany}, Policy: ${scenario.thirdPartyPolicyNumber}
+  - Insurance: ${scenario.thirdPartyInsuranceCompany}, Policy: ${
+    scenario.thirdPartyPolicyNumber
+  }
   - Version of events: ${scenario.thirdPartyVersion}
   - Note: The third party must never be fully at fault (there is always a liability claim against our driver).`;
 }
@@ -109,7 +132,10 @@ const LOD_CLAIM_HANDLER = {
   phone: "011 255 9876",
   emailDomain(insurerName: string): string {
     const base = "ilse.dekock";
-    const domain = insurerName.toLowerCase().replace(/\s+/g, "").replace(/[^a-z0-9]/g, "");
+    const domain = insurerName
+      .toLowerCase()
+      .replace(/\s+/g, "")
+      .replace(/[^a-z0-9]/g, "");
     return `${base}@${domain}.co.za`;
   },
 };
@@ -120,16 +146,79 @@ function getLetterDate(): { numeric: string; long: string } {
   const day = d.getDate();
   const month = d.getMonth();
   const year = d.getFullYear();
-  const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-  const numeric = `${String(day).padStart(2, "0")}.${String(month + 1).padStart(2, "0")}.${year}`;
+  const months = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+  const numeric = `${String(day).padStart(2, "0")}.${String(month + 1).padStart(
+    2,
+    "0"
+  )}.${year}`;
   const long = `${day} ${months[month]} ${year}`;
   return { numeric, long };
+}
+
+type BankSettingsDefaults = {
+  bankAccountNumber?: string;
+  bankName?: string;
+  branchCode?: string;
+  insurerRegistrationNumber?: string;
+};
+
+function buildProofOfBankAccountFixedBlock(
+  scenario: Scenario,
+  settingsDefaults: BankSettingsDefaults | undefined,
+): string {
+  const bankAccountNumber = settingsDefaults?.bankAccountNumber ?? "12222222221";
+  const bankName = settingsDefaults?.bankName ?? "Absa";
+  const branchCode = settingsDefaults?.branchCode ?? "632005";
+  const holder = `${scenario.thirdPartyName} ${scenario.thirdPartySurname}`.trim();
+  const idNo = scenario.thirdPartyId ?? "";
+  return `
+PROOF OF BANK ACCOUNT – FIXED VALUES (use these exactly in the document; do NOT substitute other account numbers, branch codes, bank names, or identity numbers):
+- Bank: ${bankName}
+- Branch code: ${branchCode}
+- Account number: ${bankAccountNumber}
+- Account holder: ${holder}
+- ID number: ${idNo}
+`;
+}
+
+function buildProofOfBankAccountInsuredFixedBlock(
+  scenario: Scenario,
+  settingsDefaults: BankSettingsDefaults | undefined,
+): string {
+  const bankAccountNumber = settingsDefaults?.bankAccountNumber ?? "12222222221";
+  const bankName = settingsDefaults?.bankName ?? "Absa";
+  const branchCode = settingsDefaults?.branchCode ?? "632005";
+  const insurerName = scenario.thirdPartyInsuranceCompany ?? "Insurer";
+  const regNo = settingsDefaults?.insurerRegistrationNumber ?? "2009/011882/06";
+  return `
+PROOF OF BANK ACCOUNT (INSURED / CORPORATE) – FIXED VALUES (use these exactly in the document; do NOT substitute other account numbers, branch codes, bank names, or registration numbers):
+- Bank: ${bankName}
+- Branch code: ${branchCode}
+- Account number: ${bankAccountNumber}
+- Account holder (insurer / company name): ${insurerName}
+- Company registration number: ${regNo}
+`;
 }
 
 function buildLetterOfDemandFixedBlock(scenario: Scenario): string {
   const insurer = scenario.thirdPartyInsuranceCompany ?? "Insurer";
   const policyNumber = scenario.thirdPartyPolicyNumber ?? "POL";
-  const ourReference = `${policyNumber}-${Math.floor(1000 + Math.random() * 9000)}`;
+  const ourReference = `${policyNumber}-${Math.floor(
+    1000 + Math.random() * 9000
+  )}`;
   const email = LOD_CLAIM_HANDLER.emailDomain(insurer);
   const { numeric: letterDateNumeric, long: letterDateLong } = getLetterDate();
   return `
@@ -172,26 +261,39 @@ All document details must relate only to this third party; do not include first 
 }
 
 /** Costing instruction so assessment, FRC, and quotes use the same amounts. FRC = 10% above assessment. */
-function buildCostingInstruction(requirementId: string, scenario: Scenario): string {
+function buildCostingInstruction(
+  requirementId: string,
+  scenario: Scenario
+): string {
   const a = scenario.assessmentAmount;
   const frc = scenario.finalCostingReportAmount;
   const q1 = scenario.quote1Amount;
   const q2 = scenario.quote2Amount;
   const q3 = scenario.quote3Amount;
   if (requirementId === "assessment_report" && typeof a === "number") {
-    return ` The total repair cost on this document must be exactly R ${a.toLocaleString("en-ZA")} (use this exact amount for the assessment total).`;
+    return ` The total repair cost on this document must be exactly R ${a.toLocaleString(
+      "en-ZA"
+    )} (use this exact amount for the assessment total).`;
   }
   if (requirementId === "final_costing_report" && typeof frc === "number") {
-    return ` The total repair cost on this document must be exactly R ${frc.toLocaleString("en-ZA")} (final costing report is 10% above assessment; use this exact total).`;
+    return ` The total repair cost on this document must be exactly R ${frc.toLocaleString(
+      "en-ZA"
+    )} (final costing report is 10% above assessment; use this exact total).`;
   }
   if (requirementId === "quote_1" && typeof q1 === "number") {
-    return ` The total quote amount must be exactly R ${q1.toLocaleString("en-ZA")}.`;
+    return ` The total quote amount must be exactly R ${q1.toLocaleString(
+      "en-ZA"
+    )}.`;
   }
   if (requirementId === "quote_2" && typeof q2 === "number") {
-    return ` The total quote amount must be exactly R ${q2.toLocaleString("en-ZA")}.`;
+    return ` The total quote amount must be exactly R ${q2.toLocaleString(
+      "en-ZA"
+    )}.`;
   }
   if (requirementId === "quote_3" && typeof q3 === "number") {
-    return ` The total quote amount must be exactly R ${q3.toLocaleString("en-ZA")}.`;
+    return ` The total quote amount must be exactly R ${q3.toLocaleString(
+      "en-ZA"
+    )}.`;
   }
   return "";
 }
@@ -200,6 +302,7 @@ interface GenerateImageRequestBody {
   scenario: Scenario;
   requirement: DocumentRequirement;
   exampleBase64: string | null;
+  settingsDefaults?: BankSettingsDefaults;
 }
 
 export default async function handler(
@@ -217,7 +320,7 @@ export default async function handler(
     return;
   }
 
-  const { scenario, requirement, exampleBase64 } =
+  const { scenario, requirement, exampleBase64, settingsDefaults } =
     req.body as GenerateImageRequestBody;
 
   if (!scenario || !requirement) {
@@ -230,7 +333,7 @@ export default async function handler(
   const scenarioForRequest: Scenario = {
     ...scenario,
     accidentReportNumber: truncateAccidentReportNumber(
-      scenario.accidentReportNumber,
+      scenario.accidentReportNumber
     ),
   };
 
@@ -249,14 +352,29 @@ export default async function handler(
       (DOCUMENT_PROMPTS[requirement.id] ?? "") +
       (requirement.id === "letter_of_demand"
         ? buildLetterOfDemandFixedBlock(scenarioForRequest)
-        : "") + buildCostingInstruction(requirement.id, scenarioForRequest);
+        : "") +
+      (requirement.id === "proof_of_bank_account"
+        ? buildProofOfBankAccountFixedBlock(scenarioForRequest, settingsDefaults)
+        : "") +
+      (requirement.id === "proof_of_bank_account_insured"
+        ? buildProofOfBankAccountInsuredFixedBlock(
+            scenarioForRequest,
+            settingsDefaults,
+          )
+        : "") +
+      buildCostingInstruction(requirement.id, scenarioForRequest);
 
     let prompt = "";
 
     if (useDamagePhotoContext) {
+      const isOdometerPhoto = requirement.id === "first_party_damage_photo_3";
       prompt = `
       You are an expert insurance claims photographer.
-      Generate a realistic, unedited photograph of a vehicle accident scene or vehicle damage based on the following scenario.
+      Generate a realistic, unedited photograph ${
+        isOdometerPhoto
+          ? "of the vehicle interior (odometer / instrument cluster) based on the following scenario."
+          : "of a vehicle accident scene or vehicle damage based on the following scenario."
+      }
       Do NOT generate a document, paper, or printed photo. Do NOT include any overlaid text, captions, or summaries in the image.
       It must look like a photo taken on an Iphone at the scene.
 
@@ -280,12 +398,18 @@ export default async function handler(
 
       ${
         exampleBase64
-          ? "An example photo is provided. Please use it as a structural and stylistic reference, but adjust the vehicles and damage to match the scenario information."
+          ? isOdometerPhoto
+            ? "An example photo is provided. Use it as a structural reference, but match the first party vehicle interior and odometer style to the scenario."
+            : "An example photo is provided. Please use it as a structural and stylistic reference, but adjust the vehicles and damage to match the scenario information."
           : "Please generate a realistic looking photograph from scratch."
       }
 
       IMPORTANT:
-      - This must be a pure photograph. No text, no document borders, no handwriting.
+      ${
+        isOdometerPhoto
+          ? `- This must be a pure photograph of the first party vehicle's instrument cluster; odometer / mileage digits must be clearly legible (digits are part of the scene, not overlaid text).\n      - No document borders, no handwriting, no captions or watermarks.`
+          : `- This must be a pure photograph. No text, no document borders, no handwriting.`
+      }
       `;
     } else {
       prompt = `

@@ -279,6 +279,59 @@ export function Settings({ settings, onSave, onClose }: Props) {
                   </div>
                 </div>
               </section>
+
+              <section>
+                <h3 className="text-2xl font-bold text-grey-800 mb-6">Bank details (proof of account)</h3>
+                <p className="text-grey-600 font-extralight tracking-compact leading-6 mb-6">
+                  Uninsured proof uses the scenario third party name and ID. Insured proof uses the scenario insurer name and the company registration number below (e.g. Discovery).
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-bold text-grey-600 mb-2">Insurer company registration</label>
+                    <input
+                      type="text"
+                      name="insurerRegistrationNumber"
+                      value={localSettings.defaults.insurerRegistrationNumber}
+                      onChange={handleDefaultChange}
+                      placeholder="e.g. 2009/011882/06 (Discovery)"
+                      className="w-full rounded-full bg-grey-10 border-none px-6 py-4 text-grey-800 focus:ring-2 focus:ring-green-200 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-grey-600 mb-2">Bank name</label>
+                    <input
+                      type="text"
+                      name="bankName"
+                      value={localSettings.defaults.bankName}
+                      onChange={handleDefaultChange}
+                      placeholder="e.g. Absa"
+                      className="w-full rounded-full bg-grey-10 border-none px-6 py-4 text-grey-800 focus:ring-2 focus:ring-green-200 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-grey-600 mb-2">Branch code</label>
+                    <input
+                      type="text"
+                      name="branchCode"
+                      value={localSettings.defaults.branchCode}
+                      onChange={handleDefaultChange}
+                      placeholder="e.g. 632005"
+                      className="w-full rounded-full bg-grey-10 border-none px-6 py-4 text-grey-800 focus:ring-2 focus:ring-green-200 outline-none"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-bold text-grey-600 mb-2">Account number</label>
+                    <input
+                      type="text"
+                      name="bankAccountNumber"
+                      value={localSettings.defaults.bankAccountNumber}
+                      onChange={handleDefaultChange}
+                      placeholder="e.g. 12222222221"
+                      className="w-full rounded-full bg-grey-10 border-none px-6 py-4 text-grey-800 focus:ring-2 focus:ring-green-200 outline-none"
+                    />
+                  </div>
+                </div>
+              </section>
             </div>
           ) : (
             <section className="animate-fade-in">

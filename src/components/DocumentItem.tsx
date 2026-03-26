@@ -34,7 +34,7 @@ export function DocumentItem({ requirement, scenario, settings }: Props) {
         const url = URL.createObjectURL(blob);
         setGeneratedPdfUrl(url);
       } else {
-        const result = await generateDocumentImage(scenario, requirementWithGuidance);
+        const result = await generateDocumentImage(scenario, requirementWithGuidance, settings);
         setGeneratedImage(result);
       }
     } catch (err: unknown) {
