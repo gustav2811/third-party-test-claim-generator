@@ -37,7 +37,7 @@ export interface Scenario {
   quote3Amount?: number;
 }
 
-export type ClaimType = 'insured' | 'uninsured';
+export type ClaimType = 'insured' | 'uninsured' | 'firstParty';
 
 export interface DocumentRequirement {
   id: string;
@@ -66,6 +66,14 @@ export interface AppSettings {
     firstPartyVehicleColour?: string;
     /** First party vehicle registration (SA format). */
     firstPartyVehicleRegistration?: string;
+    /** Bank account number for generated proof-of-bank-account documents. */
+    bankAccountNumber: string;
+    /** Bank name (e.g. Absa). */
+    bankName: string;
+    /** Branch / universal branch code. */
+    branchCode: string;
+    /** Insurer company registration number (e.g. Discovery Ltd). Used for insured proof of bank account. */
+    insurerRegistrationNumber: string;
   };
 }
 
@@ -87,6 +95,10 @@ export const DEFAULT_SETTINGS: AppSettings = {
     firstPartyVehicle: 'White Fiat 500',
     firstPartyVehicleColour: 'White',
     firstPartyVehicleRegistration: 'CA 123-456 GP',
+    bankAccountNumber: '12222222221',
+    bankName: 'Absa',
+    branchCode: '632005',
+    insurerRegistrationNumber: '2009/011882/06',
   }
 };
 
@@ -94,6 +106,7 @@ export const INSURED_DOCS: DocumentRequirement[] = [
   { id: 'letter_of_demand', title: 'Letter of Demand', description: 'Formal letter demanding payment.' },
   { id: 'assessment_report', title: 'Assessment Report / Quote', description: 'Assessment report for the vehicle or panel beater quote.' },
   { id: 'final_costing_report', title: 'Final Costing Report', description: 'Final costing report for the vehicle.' },
+  { id: 'proof_of_bank_account_insured', title: 'Proof of Bank Account', description: 'Bank letter or stamped confirmation in the third party insurer\'s name with company registration for payment.' },
 ];
 
 export const LEGAL_DOCS: DocumentRequirement[] = [
@@ -109,6 +122,12 @@ export const LEGAL_DOCS: DocumentRequirement[] = [
   },
 ];
 
+export const FIRST_PARTY_DOCS: DocumentRequirement[] = [
+  { id: 'first_party_damage_photo_1', title: 'First Party Damage Photo 1', description: 'Photo of damage to our insured vehicle (close-up).' },
+  { id: 'first_party_damage_photo_2', title: 'First Party Damage Photo 2', description: 'Photo showing the accident scene / first party vehicle.' },
+  { id: 'first_party_damage_photo_3', title: 'First Party Odometer Photo', description: 'Close-up of the odometer / mileage reading on our insured vehicle.' },
+];
+
 export const UNINSURED_DOCS: DocumentRequirement[] = [
   { id: 'claim_form', title: 'Third Party Claim Form', description: 'Document with all the claim form requirements.' },
   { id: 'quote_1', title: 'Panel Beater Quote 1', description: 'First unique quote.' },
@@ -121,9 +140,10 @@ export const UNINSURED_DOCS: DocumentRequirement[] = [
   { id: 'natis_document', title: 'Natis Document', description: 'Natis document for the involved vehicle.' },
   { id: 'no_claims_letter', title: 'No Claims Letter / Affidavit', description: 'Confirming there is no insurance claim.' },
   { id: 'licence_disc', title: 'Licence Disc', description: 'Licence disc on the vehicle screen, showing the VIN.' },
+  { id: 'proof_of_bank_account', title: 'Proof of Bank Account', description: 'Bank letter or stamped confirmation showing the third party account details for payment.' },
 ];
 
-export const ALL_DOCS = [...INSURED_DOCS, ...LEGAL_DOCS, ...UNINSURED_DOCS];
+export const ALL_DOCS = [...INSURED_DOCS, ...LEGAL_DOCS, ...UNINSURED_DOCS, ...FIRST_PARTY_DOCS];
 
 declare global {
   interface Window {

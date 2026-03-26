@@ -340,13 +340,19 @@ export async function generateClaimFormPdf(
 export async function generateDocumentImage(
   scenario: Scenario,
   requirement: DocumentRequirement,
+  settings?: AppSettings,
 ): Promise<string> {
   const exampleBase64 = await db.get(requirement.id);
 
   const res = await fetch("/api/generate-image", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ scenario, requirement, exampleBase64 }),
+    body: JSON.stringify({
+      scenario,
+      requirement,
+      exampleBase64,
+      settingsDefaults: settings?.defaults,
+    }),
   });
 
   if (!res.ok) {
