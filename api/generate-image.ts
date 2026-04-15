@@ -38,7 +38,12 @@ interface DocumentRequirement {
 }
 
 /** Document IDs that receive full scenario context (first + third party). Excludes damage photos (see DOCS_DAMAGE_PHOTO). */
-const DOCS_FULL_SCENARIO = new Set<string>(["claim_form", "letter_of_demand"]);
+const DOCS_FULL_SCENARIO = new Set<string>([
+  "claim_form",
+  "letter_of_demand",
+  "summons",
+  "return_of_service",
+]);
 
 /** Damage photos get minimal context only: first party vehicle; third party vehicle, licence plate, version of events. */
 const DOCS_DAMAGE_PHOTO = new Set<string>([
@@ -90,7 +95,6 @@ export const DOCUMENT_PROMPTS: Record<string, string> = {
     "Realistic photo of vehicle damage to the FIRST PARTY'S vehicle, given the accident scenario. Damage photo should show the entire accident scene based on the scenario.",
   first_party_damage_photo_3:
     "Realistic close-up photo of the FIRST PARTY'S vehicle odometer showing the mileage reading (dashboard / instrument cluster). No damage focus — the odometer must be clearly legible.",
-
 };
 
 function buildFullScenarioContext(scenario: Scenario): string {
@@ -177,12 +181,14 @@ type BankSettingsDefaults = {
 
 function buildProofOfBankAccountFixedBlock(
   scenario: Scenario,
-  settingsDefaults: BankSettingsDefaults | undefined,
+  settingsDefaults: BankSettingsDefaults | undefined
 ): string {
-  const bankAccountNumber = settingsDefaults?.bankAccountNumber ?? "12222222221";
+  const bankAccountNumber =
+    settingsDefaults?.bankAccountNumber ?? "12222222221";
   const bankName = settingsDefaults?.bankName ?? "Absa";
   const branchCode = settingsDefaults?.branchCode ?? "632005";
-  const holder = `${scenario.thirdPartyName} ${scenario.thirdPartySurname}`.trim();
+  const holder =
+    `${scenario.thirdPartyName} ${scenario.thirdPartySurname}`.trim();
   const idNo = scenario.thirdPartyId ?? "";
   return `
 PROOF OF BANK ACCOUNT – FIXED VALUES (use these exactly in the document; do NOT substitute other account numbers, branch codes, bank names, or identity numbers):
@@ -196,9 +202,10 @@ PROOF OF BANK ACCOUNT – FIXED VALUES (use these exactly in the document; do NO
 
 function buildProofOfBankAccountInsuredFixedBlock(
   scenario: Scenario,
-  settingsDefaults: BankSettingsDefaults | undefined,
+  settingsDefaults: BankSettingsDefaults | undefined
 ): string {
-  const bankAccountNumber = settingsDefaults?.bankAccountNumber ?? "12222222221";
+  const bankAccountNumber =
+    settingsDefaults?.bankAccountNumber ?? "12222222221";
   const bankName = settingsDefaults?.bankName ?? "Absa";
   const branchCode = settingsDefaults?.branchCode ?? "632005";
   const insurerName = scenario.thirdPartyInsuranceCompany ?? "Insurer";
@@ -354,12 +361,15 @@ export default async function handler(
         ? buildLetterOfDemandFixedBlock(scenarioForRequest)
         : "") +
       (requirement.id === "proof_of_bank_account"
-        ? buildProofOfBankAccountFixedBlock(scenarioForRequest, settingsDefaults)
+        ? buildProofOfBankAccountFixedBlock(
+            scenarioForRequest,
+            settingsDefaults
+          )
         : "") +
       (requirement.id === "proof_of_bank_account_insured"
         ? buildProofOfBankAccountInsuredFixedBlock(
             scenarioForRequest,
-            settingsDefaults,
+            settingsDefaults
           )
         : "") +
       buildCostingInstruction(requirement.id, scenarioForRequest);
